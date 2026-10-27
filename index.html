@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FFF9EC">
-<title>늘봄 결석 신고</title>
+<title>2026 초등학교 방과후 프로그램(방학집중형) 출결</title>
 <!-- ★★★ 여기 한 줄만 고치면 됩니다 ★★★
      Apps Script [배포 > 배포 관리]의 웹 앱 URL (https://script.google.com/macros/s/…/exec) 을 따옴표 안에 붙여넣으세요. -->
-<script>window.NB_API_URL = 'https://script.google.com/macros/s/AKfycby_R8KebG8YbdiisGHANm3obt0EWTU9nwwndFsNnd1_CxE7lTTgF3dCG-lnWPM-Yg_UaA/exec';</script>
+<script>window.NB_API_URL = 'https://script.google.com/macros/s/AKfycbx_iCePGtS0Z4yfJpx32iS2jJA1SrRoD4ByCg_dCGSW7xveShj78tGsymPAN5NqOVmxJA/exec';</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
@@ -46,7 +46,7 @@ p{margin:0}
 .brand{display:flex;align-items:center;gap:10px;min-width:0}
 .brand-mark{width:38px;height:38px;flex:none;border-radius:12px;background:var(--accent);color:#fff;display:grid;place-items:center}
 .brand-mark svg{width:22px;height:22px}
-.brand-name{font:24px/1.1 var(--font-display);color:var(--accent)}
+.brand-name{font:21px/1.2 var(--font-display);color:var(--accent)}
 .brand-sub{font-size:13px;color:var(--fg-muted);margin-top:2px}
 .top-act{display:flex;gap:6px;flex:none}
 
@@ -198,7 +198,7 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
   .pick{min-width:0;flex:1}
   .ros li{grid-template-columns:20px 1fr auto;gap:8px}
   .seg button{min-width:52px;padding:0 8px}
-  .brand-name{font-size:21px}
+  .brand-name{font-size:18px}
   .brand-mark{width:34px;height:34px}
   .datebar .d{font-size:20px;min-width:0}
   .datebar input[type=date]{flex-basis:100%}
@@ -262,7 +262,7 @@ const app = $('#app');
 
 function header(sub, right) {
   const p = S.pub || {};
-  return '<header class="top"><div class="brand"><div class="brand-mark">' + ICON + '</div><div><div class="brand-name">' + esc(p.name || '늘봄 결석 신고') + '</div><div class="brand-sub">' + esc(sub || p.school || '') + '</div></div></div><div class="top-act">' + (right || '') + '</div></header>';
+  return '<header class="top"><div class="brand"><div class="brand-mark">' + ICON + '</div><div><div class="brand-name">' + esc(p.name || '2026 초등학교 방과후 프로그램(방학집중형) 출결') + '</div><div class="brand-sub">' + esc(sub || p.school || '') + '</div></div></div><div class="top-act">' + (right || '') + '</div></header>';
 }
 function footer() {
   const p = S.pub || {};
@@ -278,14 +278,14 @@ function renderHome(msg) {
   app.className = 'wrap';
   app.innerHTML = header() +
     '<section class="hero"><h1>오늘 못 가나요?<br>여기서 결석 신고하세요</h1><p>전화하지 않아도 강사 선생님 출석부에 바로 표시돼요.</p>' +
-    '<div class="steps"><div><b>1</b>자녀 이름 ·<br>휴대폰 입력</div><div><b>2</b>못 가는 수업<br>고르기</div><div><b>3</b>사유 고르고<br>신청 끝</div></div></section>' +
+    '<div class="steps"><div><b>1</b>자녀 이름 ·<br>휴대폰 뒷번호</div><div><b>2</b>못 가는 수업<br>고르기</div><div><b>3</b>사유 고르고<br>신청 끝</div></div></section>' +
     '<form class="card" id="loginForm" autocomplete="on"><h2 style="font:21px var(--font-display);margin-bottom:12px">우리 아이 수업 보기</h2>' +
     (msg ? '<div class="note warn" style="margin-bottom:12px">' + esc(msg) + '</div>' : '') +
     '<label class="field"><span>자녀 이름</span><input class="input" name="kid" required maxlength="20" value="' + esc(saved.name || '') + '" placeholder="예: 김하나" autocomplete="off"></label>' +
-    '<label class="field"><span>보호자 휴대폰 <em>(수강 등록 때 적은 번호)</em></span><input class="input" name="phone" required inputmode="numeric" maxlength="13" value="' + esc(fmtPhone(saved.phone || '')) + '" placeholder="010-0000-0000" data-phone></label>' +
+    '<label class="field"><span>보호자 휴대폰 뒷번호 4자리 <em>(수강 등록 때 적은 번호)</em></span><input class="input" name="phone" required inputmode="numeric" maxlength="13" value="' + esc(saved.phone || '') + '" placeholder="예: 5678" autocomplete="off"></label>' +
     '<label class="check" style="margin-top:12px"><input type="checkbox" name="remember" ' + (saved.name || !store.get('nb.parent.no') ? 'checked' : '') + '> 이 휴대폰에 기억하기 (다음엔 바로 열려요)</label>' +
     '<button class="btn primary block" style="margin-top:16px" type="submit">확인</button></form>' +
-    '<div class="card reg-cta"><div><b>처음이신가요?</b><p class="small muted">자녀의 늘봄 수업을 먼저 등록해 주세요.</p></div>' +
+    '<div class="card reg-cta"><div><b>처음이신가요?</b><p class="small muted">자녀의 방과후 수업을 먼저 등록해 주세요.</p></div>' +
     (p.regOpen ? '<button class="btn line" data-act="go-reg">수강 등록</button>' : '<span class="badge neutral">등록 기간 아님</span>') + '</div>' +
     '<div class="note" style="margin-top:14px">결석 신고는 <b>수업 시작 ' + (p.deadlineMin ? p.deadlineMin + '분 전' : '전') + '까지</b> 할 수 있어요.' + (p.phone ? ' 그 뒤에는 <a href="tel:' + esc(p.phone) + '">' + esc(p.phone) + '</a> 로 연락해 주세요.' : '') + '</div>' +
     footer();
@@ -431,7 +431,7 @@ function renderReg(mode) {
     '<label class="field"><span>보호자 이름 <em>(선택)</em></span><input class="input" name="guardian" maxlength="20" value="' + esc(r.guardian) + '"></label></div>' +
     '<div class="card"><h2 style="font:21px var(--font-display);margin-bottom:4px">② 수업 고르기</h2><p class="small muted" style="margin-bottom:12px" id="clsHint">학년을 고르면 들을 수 있는 수업이 보여요.</p><div id="clsList"></div></div>' +
     '<div class="card"><h2 style="font:21px var(--font-display);margin-bottom:10px">③ 개인정보 수집·이용 동의</h2><div class="note consent">' +
-    '<b>수집 항목</b>: 자녀 이름, 학년·반, 보호자 휴대폰 번호, 보호자 이름(선택)<br><b>이용 목적</b>: 늘봄 수업 수강 관리와 결석 신고·출결 확인<br><b>보유 기간</b>: ' + esc(p.retention || '해당 학년도 종료 시까지') + ' (이후 파기)<br>동의하지 않을 수 있으나, 이 경우 시스템으로 수강 등록과 결석 신고를 할 수 없습니다.</div>' +
+    '<b>수집 항목</b>: 자녀 이름, 학년·반, 보호자 휴대폰 번호, 보호자 이름(선택)<br><b>이용 목적</b>: 방과후 프로그램 수강 관리와 결석 신고·출결 확인<br><b>보유 기간</b>: ' + esc(p.retention || '해당 학년도 종료 시까지') + ' (이후 파기)<br>동의하지 않을 수 있으나, 이 경우 시스템으로 수강 등록과 결석 신고를 할 수 없습니다.</div>' +
     '<label class="check" style="margin-top:12px"><input type="checkbox" name="consent" required> 위 내용에 동의합니다</label></div>' +
     (p.approval ? '<div class="note">등록하면 학교에서 확인한 뒤 승인돼요. 승인 전에는 결석 신고 일정에 나타나지 않아요.</div>' : '') +
     '<button class="btn primary block" type="submit" id="regBtn">등록하기</button></form>' + footer();
@@ -660,8 +660,8 @@ function show(view, mode) {
 
 async function boot() {
   if (PAGE === 't' || PAGE === 'admin') {
-    document.title = (IS_ADMIN ? '관리자' : '강사 출석부') + ' · 늘봄 결석 신고';
-    S.pub = await rpc('getPublic').catch(() => null) || { name: '늘봄 결석 신고' };
+    document.title = (IS_ADMIN ? '관리자' : '강사 출석부') + ' · ' + '2026 초등학교 방과후 프로그램(방학집중형) 출결';
+    S.pub = await rpc('getPublic').catch(() => null) || { name: '2026 초등학교 방과후 프로그램(방학집중형) 출결' };
     S.pin = store.get(PIN_KEY) || '';
     if (S.pin) { app.innerHTML = '<div class="loading"><span class="spin"></span> 출석부 불러오는 중…</div>'; await loadStaff(null); if (S.view === 'staff') startPoll(); else if (S.view !== 'pin') renderPin(); }
     else renderPin();
