@@ -119,8 +119,10 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .pick{min-height:44px;min-width:92px;border-radius:12px;border:1.5px solid var(--abs);background:#fff;color:var(--abs);font-weight:700;padding:0 12px}
 .pick[aria-pressed="true"]{background:var(--abs);color:#fff}
 .past-toggle{margin-top:22px}
-.kid-cls{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px dashed var(--line);font-size:14.5px}
+.kid-cls{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px dashed var(--line);font-size:14.5px}
 .kid-cls:first-of-type{border-top:0}
+.kid-card .kid-h{padding-bottom:6px}
+.kid-card .kid-h + .kid-cls{border-top:1px dashed var(--line)}
 
 /* 하단 고정 바 */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
@@ -155,7 +157,8 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .term-h:first-child{margin-top:0}
 .tbd{color:var(--warn);font-weight:600}
 .cls-opt .desc{font-size:14px;line-height:1.45;color:var(--fg);margin:3px 0 4px}
-.consent{font-size:13px}
+.reg-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.reg-grid .field + .field{margin-top:0}
 
 /* 강사 · 관리자 */
 .datebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;box-shadow:var(--shadow)}
@@ -259,7 +262,7 @@ function busy(btn, on) { if (!btn) return; if (on) { btn.dataset.label = btn.inn
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M9 15l2 2 4-4"/></svg>';
 
 /* ───────── 상태 ───────── */
-const S = { pub: null, view: '', parent: null, pdata: null, kid: 'all', sel: new Set(), showPast: false, showCls: false, reg: { kid: '', grade: '', ban: '', phone: '', guardian: '', ids: new Set() },
+const S = { pub: null, view: '', parent: null, pdata: null, kid: 'all', sel: new Set(), showPast: false, showCls: true, reg: { kid: '', grade: '', ban: '', phone: '', guardian: '', ids: new Set() },
   pin: '', sdata: null, date: '', open: {}, tab: 'roster', timer: null };
 const PAGE = new URLSearchParams(location.search).get('page') || '';
 const app = $('#app');
@@ -281,16 +284,15 @@ function renderHome(msg) {
   const saved = store.get('nb.parent') || {};
   app.className = 'wrap';
   app.innerHTML = header() +
-    '<section class="hero"><h1>오늘 못 가나요?<br>여기서 결석 신고하세요</h1><p>전화하지 않아도 강사 선생님 출석부에 바로 표시돼요.</p>' +
-    '<div class="steps"><div><b>1</b>자녀 이름 ·<br>휴대폰 뒷번호</div><div><b>2</b>못 가는 수업<br>고르기</div><div><b>3</b>사유 고르고<br>신청 끝</div></div></section>' +
+    '<section class="hero"><h1>우리 아이 수업과 출결,<br>여기서 확인하세요</h1><p>못 가는 날은 결석 신고만 하면 강사 선생님 출석부에 바로 표시돼요. 전화하지 않아도 돼요.</p>' +
+    '<div class="steps"><div><b>1</b>자녀 이름 ·<br>휴대폰 뒷번호</div><div><b>2</b>수강 내역 ·<br>출결 확인</div><div><b>3</b>못 가는 날<br>결석 신고</div></div></section>' +
     '<form class="card" id="loginForm" autocomplete="on"><h2 style="font:21px var(--font-display);margin-bottom:12px">우리 아이 수업 보기</h2>' +
     (msg ? '<div class="note warn" style="margin-bottom:12px">' + esc(msg) + '</div>' : '') +
     '<label class="field"><span>자녀 이름</span><input class="input" name="kid" required maxlength="20" value="' + esc(saved.name || '') + '" placeholder="예: 김하나" autocomplete="off"></label>' +
-    '<label class="field"><span>보호자 휴대폰 뒷번호 4자리 <em>(수강 등록 때 적은 번호)</em></span><input class="input" name="phone" required inputmode="numeric" maxlength="13" value="' + esc(saved.phone || '') + '" placeholder="예: 5678" autocomplete="off"></label>' +
+    '<label class="field"><span>보호자 휴대폰 뒷번호 4자리 <em>(학교에 알려 주신 번호)</em></span><input class="input" name="phone" required inputmode="numeric" maxlength="13" value="' + esc(saved.phone || '') + '" placeholder="예: 5678" autocomplete="off"></label>' +
     '<label class="check" style="margin-top:12px"><input type="checkbox" name="remember" ' + (saved.name || !store.get('nb.parent.no') ? 'checked' : '') + '> 이 휴대폰에 기억하기 (다음엔 바로 열려요)</label>' +
     '<button class="btn primary block" style="margin-top:16px" type="submit">확인</button></form>' +
-    '<div class="card reg-cta"><div><b>처음이신가요?</b><p class="small muted">자녀의 방과후 수업을 먼저 등록해 주세요.</p></div>' +
-    (p.regOpen ? '<button class="btn line" data-act="go-reg">수강 등록</button>' : '<span class="badge neutral">등록 기간 아님</span>') + '</div>' +
+    '<div class="note" style="margin-top:14px"><b>따로 가입하지 않아도 돼요.</b> 수강 등록은 학교에서 해 드려요. 로그인이 안 되면 자녀 이름과 휴대폰 뒷번호를 확인해 주세요.</div>' +
     '<div class="note" style="margin-top:14px">결석 신고는 <b>수업 시작 ' + (p.deadlineMin ? p.deadlineMin + '분 전' : '전') + '까지</b> 할 수 있어요.' + (p.phone ? ' 그 뒤에는 <a href="tel:' + esc(p.phone) + '">' + esc(p.phone) + '</a> 로 연락해 주세요.' : '') + '</div>' +
     footer();
 }
@@ -319,13 +321,26 @@ function renderMy() {
   const up = list.filter(s => !s.past), past = list.filter(s => s.past).reverse();
   const byDay = {};
   up.forEach(s => { (byDay[s.date] = byDay[s.date] || []).push(s); });
-  const pending = d.kids.some(k => k.classes.some(c => c.status === '대기'));
   let h = header(d.kids.map(k => k.name).join(' · ') + ' 보호자님', '<button class="btn sm line" data-act="refresh" aria-label="새로고침">새로고침</button><button class="btn sm line" data-act="logout">나가기</button>');
   if (multi) h += '<div class="chips" role="group" aria-label="자녀 선택"><button class="chip" data-act="kid" data-kid="all" aria-pressed="' + (S.kid === 'all') + '">모두</button>' + d.kids.map(k => '<button class="chip" data-act="kid" data-kid="' + esc(k.name) + '" aria-pressed="' + (S.kid === k.name) + '">' + esc(k.name) + '</button>').join('') + '</div>';
-  if (pending) h += '<div class="note warn" style="margin-top:12px">승인을 기다리는 수업이 있어요. 학교에서 승인하면 아래 일정에 나타나요.</div>';
-  h += '<p class="small muted" style="margin-top:14px">못 가는 수업의 <b style="color:var(--abs)">[결석]</b> 버튼을 누른 뒤 아래 <b>[결석 신청]</b>을 눌러 주세요. 여러 개를 한 번에 고를 수 있어요.</p>';
+  // ① 수강 내역 — 로그인하면 맨 먼저 보임 (수강 등록은 학교에서 해 줌)
+  h += '<h2 class="sec-title">수강 내역 <button class="linkbtn xs" data-act="cls-tog">' + (S.showCls ? '접기' : '펼치기') + '</button></h2>';
+  if (S.showCls) {
+    h += d.kids.filter(k => kidOk(k.name)).map(k => '<div class="card kid-card"><div class="kid-h"><b>' + esc(k.name) + '</b> <span class="small muted">' + k.grade + '학년' + (k.ban ? ' ' + esc(k.ban) + '반' : '') + ' · ' + k.classes.length + '개 수업</span></div>' +
+      k.classes.map(c => {
+        const t = c.tot || {};
+        const sum = (t.p ? '<span class="badge ok">출석 ' + t.p + '</span>' : '') + (t.a ? '<span class="badge abs">결석 ' + t.a + '</span>' : '') + (t.rep ? '<span class="badge warn">결석 신고 ' + t.rep + '</span>' : '');
+        return '<div class="kid-cls"><div style="min-width:0"><b>' + esc(c.name) + '</b>' + (c.desc ? '<div class="xs" style="margin-top:2px">' + esc(c.desc) + '</div>' : '') +
+          '<div class="xs muted" style="margin-top:2px">' + (c.term ? esc(c.term) + ' · ' : '') + (c.start ? esc(c.days) + ' ' + esc(c.start) + '–' + esc(c.end) : '일정 추후 안내') + (c.place ? ' · ' + esc(c.place) : '') + (c.teacher ? ' · ' + esc(c.teacher) : '') + '</div>' +
+          (c.from ? '<div class="xs muted">' + esc(c.from.replace(/-/g, '.')) + ' ~ ' + esc((c.to || '').replace(/-/g, '.')) + '</div>' : '') +
+          (sum ? '<div class="counts" style="justify-content:flex-start;margin-top:6px">' + sum + '</div>' : '') + '</div>' + statusBadge(c.status) + '</div>';
+      }).join('') + '</div>').join('');
+  }
+  // ② 수업 일정 · 결석 신고
+  h += '<h2 class="sec-title">수업 일정 · 결석 신고</h2>';
+  h += '<p class="small muted">못 가는 수업의 <b style="color:var(--abs)">[결석]</b> 버튼을 누른 뒤 아래 <b>[결석 신청]</b>을 눌러 주세요. 여러 개를 한 번에 고를 수 있어요. 수업이 끝나면 선생님이 체크한 출결이 보여요.</p>';
   const days = Object.keys(byDay).sort();
-  if (!days.length) h += '<div class="card empty" style="margin-top:14px">앞으로 예정된 수업이 없어요.</div>';
+  if (!days.length) h += '<div class="card empty" style="margin-top:14px">' + (d.kids.some(k => k.classes.some(c => !c.start)) ? '수업 일정이 아직 정해지지 않았어요. 일정이 나오면 여기에 보여요.' : '앞으로 예정된 수업이 없어요.') + '</div>';
   days.forEach(day => {
     const ss = byDay[day];
     const selectable = ss.filter(s => s.canReport && !s.report);
@@ -338,14 +353,7 @@ function renderMy() {
     h += '<button class="btn line block past-toggle" data-act="past">' + (S.showPast ? '지난 수업 출결 접기' : '지난 7일 출결 보기 (' + past.length + ')') + '</button>';
     if (S.showPast) h += '<div style="margin-top:10px">' + past.map(s => sesRow(s, multi && S.kid === 'all', true)).join('') + '</div>';
   }
-  // 등록한 수업
-  h += '<h2 class="sec-title">등록한 수업 <button class="linkbtn xs" data-act="cls-tog">' + (S.showCls ? '접기' : '펼치기') + '</button></h2>';
-  if (S.showCls) {
-    h += d.kids.filter(k => kidOk(k.name)).map(k => '<div class="card"><b>' + esc(k.name) + '</b> <span class="small muted">' + k.grade + '학년' + (k.ban ? ' ' + esc(k.ban) + '반' : '') + '</span>' +
-      k.classes.map(c => '<div class="kid-cls"><div><b>' + esc(c.name) + '</b>' + (c.desc ? '<div class="xs" style="margin-top:2px">' + esc(c.desc) + '</div>' : '') + '<div class="xs muted">' + (c.term ? esc(c.term) + ' · ' : '') + (c.start ? esc(c.days) + ' ' + esc(c.start) + '–' + esc(c.end) : '일정 추후 안내') + (c.place ? ' · ' + esc(c.place) : '') + (c.teacher ? ' · ' + esc(c.teacher) : '') + '</div></div>' + statusBadge(c.status) + '</div>').join('') + '</div>').join('');
-  }
-  h += '<div class="chips" style="margin-top:14px">' + (S.pub.regOpen ? '<button class="btn line sm" data-act="go-reg-more">＋ 수업 추가 등록</button><button class="btn line sm" data-act="go-reg-kid">＋ 다른 자녀 등록</button>' : '') + '</div>';
-  if (d.contact) h += '<div class="note" style="margin-top:16px">신고 마감이 지났거나 수업을 그만두려면 <a href="tel:' + esc(d.contact) + '">' + esc(d.contact) + '</a> 로 연락해 주세요.</div>';
+  if (d.contact) h += '<div class="note" style="margin-top:16px">신고 마감이 지났거나, 수강 내역이 다르거나, 수업을 그만두려면 <a href="tel:' + esc(d.contact) + '">' + esc(d.contact) + '</a> 로 연락해 주세요.</div>';
   h += footer();
   app.className = 'wrap';
   app.innerHTML = h;
@@ -417,36 +425,26 @@ async function refreshMy(btn) {
   catch (e) { toast(e.message, true); busy(btn, false); }
 }
 
-/* ───────── 학부모: 수강 등록 ───────── */
-function renderReg(mode) {
-  S.view = 'reg';
-  const p = S.pub; const r = S.reg;
-  if (mode === 'more' && S.pdata) { const k = S.pdata.kids.find(x => S.kid === 'all' ? true : x.name === S.kid) || S.pdata.kids[0]; Object.assign(r, { kid: k.name, grade: String(k.grade), ban: k.ban, phone: S.parent.phone }); r.ids.clear(); }
-  if (mode === 'kid' && S.pdata) { Object.assign(r, { kid: '', grade: '', ban: '', phone: S.parent.phone }); r.ids.clear(); }
-  app.className = 'wrap';
-  if (!p.regOpen) { app.innerHTML = header('수강 등록') + '<div class="card empty">지금은 수강 등록 기간이 아니에요.</div><button class="btn line block" style="margin-top:14px" data-act="home">처음으로</button>' + footer(); return; }
-  app.innerHTML = header('수강 등록', '<button class="btn sm line" data-act="back">뒤로</button>') +
-    '<form id="regForm" class="stack" autocomplete="off">' +
-    '<div class="card"><h2 style="font:21px var(--font-display);margin-bottom:12px">① 자녀 정보</h2>' +
-    '<label class="field"><span>자녀 이름</span><input class="input" name="kid" required maxlength="20" value="' + esc(r.kid) + '" placeholder="예: 김하나"></label>' +
-    '<div class="row2" style="margin-top:12px"><label class="field" style="margin:0"><span>학년</span><select class="input" name="grade" required><option value="">고르기</option>' + [1, 2, 3, 4, 5, 6].map(g => '<option value="' + g + '"' + (String(g) === r.grade ? ' selected' : '') + '>' + g + '학년</option>').join('') + '</select></label>' +
-    '<label class="field" style="margin:0"><span>반 <em>(숫자)</em></span><input class="input" name="ban" inputmode="numeric" maxlength="2" value="' + esc(r.ban) + '" placeholder="예: 3"></label></div>' +
-    '<label class="field" style="margin-top:12px"><span>보호자 휴대폰 <em>(결석 신고 때 이 번호로 확인해요)</em></span><input class="input" name="phone" required inputmode="numeric" maxlength="13" value="' + esc(fmtPhone(r.phone)) + '" placeholder="010-0000-0000" data-phone></label>' +
+/* ───────── 관리자: 수강 등록 · 수강생 명단 ───────── */
+// 학부모는 수강 등록을 하지 않음. 관리자가 여기(또는 스프레드시트 [수강] 탭)에서 등록하면, 학부모는 자녀 이름 + 휴대폰 뒷번호 4자리로 로그인
+function regFormHTML() {
+  const r = S.reg;
+  return '<form id="regForm" class="card" style="margin-top:14px" autocomplete="off"><h2 style="font:21px var(--font-display);margin-bottom:4px">수강 등록</h2>' +
+    '<p class="small muted" style="margin-bottom:14px">여기서 등록하면 학부모는 <b>학생 이름 + 보호자 휴대폰 뒷번호 4자리</b>로 바로 로그인할 수 있어요. 인원이 많으면 스프레드시트 [수강] 탭에 명단을 붙여넣어도 돼요 (수업ID 대신 수업명만 적어도 됨).</p>' +
+    '<div class="reg-grid"><label class="field"><span>학생 이름</span><input class="input" name="kid" required maxlength="20" value="' + esc(r.kid) + '" placeholder="예: 김하나"></label>' +
+    '<label class="field"><span>학년</span><select class="input" name="grade" required><option value="">고르기</option>' + [1, 2, 3, 4, 5, 6].map(g => '<option value="' + g + '"' + (String(g) === r.grade ? ' selected' : '') + '>' + g + '학년</option>').join('') + '</select></label>' +
+    '<label class="field"><span>반 <em>(숫자)</em></span><input class="input" name="ban" inputmode="numeric" maxlength="2" value="' + esc(r.ban) + '" placeholder="예: 3"></label>' +
+    '<label class="field"><span>보호자 휴대폰 <em>(전체 번호)</em></span><input class="input" name="phone" required inputmode="numeric" maxlength="13" value="' + esc(fmtPhone(r.phone)) + '" placeholder="010-0000-0000" data-phone></label>' +
     '<label class="field"><span>보호자 이름 <em>(선택)</em></span><input class="input" name="guardian" maxlength="20" value="' + esc(r.guardian) + '"></label></div>' +
-    '<div class="card"><h2 style="font:21px var(--font-display);margin-bottom:4px">② 수업 고르기</h2><p class="small muted" style="margin-bottom:12px" id="clsHint">학년을 고르면 들을 수 있는 수업이 보여요.</p><div id="clsList"></div></div>' +
-    '<div class="card"><h2 style="font:21px var(--font-display);margin-bottom:10px">③ 개인정보 수집·이용 동의</h2><div class="note consent">' +
-    '<b>수집 항목</b>: 자녀 이름, 학년·반, 보호자 휴대폰 번호, 보호자 이름(선택)<br><b>이용 목적</b>: 방과후 프로그램 수강 관리와 결석 신고·출결 확인<br><b>보유 기간</b>: ' + esc(p.retention || '해당 학년도 종료 시까지') + ' (이후 파기)<br>동의하지 않을 수 있으나, 이 경우 시스템으로 수강 등록과 결석 신고를 할 수 없습니다.</div>' +
-    '<label class="check" style="margin-top:12px"><input type="checkbox" name="consent" required> 위 내용에 동의합니다</label></div>' +
-    (p.approval ? '<div class="note">등록하면 학교에서 확인한 뒤 승인돼요. 승인 전에는 결석 신고 일정에 나타나지 않아요.</div>' : '') +
-    '<button class="btn primary block" type="submit" id="regBtn">등록하기</button></form>' + footer();
-  renderClsList();
+    '<div class="field" style="margin-top:16px"><span>수업 고르기 <em id="clsHint"></em></span><div id="clsList"></div></div>' +
+    '<button class="btn primary block" type="submit" id="regBtn" style="margin-top:16px">등록하기</button></form>';
 }
 function renderClsList() {
   const box = $('#clsList'); if (!box) return;
   const g = Number(S.reg.grade);
-  const all = S.pub.classes;
+  const all = (S.sdata && S.sdata.regClasses) || [];
   // 학년을 고르기 전에는 모든 수업을 보여 주고, 고르면 그 학년이 들을 수 있는 수업만 남김
-  if (!all.length) { $('#clsHint').textContent = ''; box.innerHTML = '<div class="empty small">아직 신청할 수 있는 수업이 없어요. 학교에 문의해 주세요.<br><span class="xs">(관리자: 시트 메뉴 [늘봄 결석 > 수업 목록 점검]으로 확인)</span></div>'; return; }
+  if (!all.length) { $('#clsHint').textContent = ''; box.innerHTML = '<div class="empty small">등록할 수 있는 수업이 없어요.<br><span class="xs">스프레드시트 메뉴 [늘봄 결석 > 수업 목록 점검]으로 확인해 주세요.</span></div>'; return; }
   const ok = g ? all.filter(c => gradeOk(c.grade, g)) : all.slice();
   const hidden = all.length - ok.length;
   Array.from(S.reg.ids).forEach(id => { if (!ok.some(c => c.id === id)) S.reg.ids.delete(id); });
@@ -478,15 +476,33 @@ async function submitReg(form) {
   if (!r.ids.size) { toast('수업을 하나 이상 골라 주세요.', true); return; }
   const btn = $('#regBtn'); busy(btn, true);
   try {
-    const res = await rpc('register', { kid: r.kid, grade: r.grade, ban: r.ban, phone: r.phone, guardian: r.guardian, classIds: Array.from(r.ids), consent: !!f.get('consent') });
+    const res = await rpc('registerByAdmin', S.pin, { kid: r.kid, grade: r.grade, ban: r.ban, phone: r.phone, guardian: r.guardian, classIds: Array.from(r.ids) });
     busy(btn, false);
     const okN = res.results.filter(x => x.ok).length;
-    const nm = (id) => (S.pub.classes.find(c => c.id === id) || {}).name || id;
-    modal('<h2>' + (okN ? '등록했어요' : '등록하지 못했어요') + '</h2><ul class="res-list">' + res.results.map(x => '<li><span>' + esc(x.name || nm(x.classId)) + '</span>' + (x.ok ? (x.status === '대기' ? '<span class="badge warn">승인 대기</span>' : '<span class="badge ok">등록 완료</span>') : '<span class="badge abs">' + esc(x.msg) + '</span>') + '</li>').join('') + '</ul>' +
-      (okN ? '<p class="small muted" style="margin-top:12px">이제 <b>' + esc(r.kid) + '</b> 이름과 이 휴대폰 번호로 결석 신고를 할 수 있어요.</p>' : '') +
-      '<div class="sheet-act">' + (okN ? '<button class="btn primary" data-act="reg-done" autofocus>우리 아이 수업 보기</button>' : '<button class="btn line" data-act="close" autofocus>닫기</button>') + '</div>');
-    if (okN) { S.pub = await rpc('getPublic').catch(() => S.pub); r.ids.clear(); }
+    const nm = (id) => ((S.sdata.regClasses || []).find(c => c.id === id) || {}).name || id;
+    const last4 = String(r.phone).replace(/\D/g, '').slice(-4);
+    modal('<h2>' + (okN ? esc(r.kid) + ' 등록 완료' : '등록하지 못했어요') + '</h2><ul class="res-list">' + res.results.map(x => '<li><span>' + esc(x.name || nm(x.classId)) + '</span>' + (x.ok ? '<span class="badge ok">등록</span>' : '<span class="badge abs">' + esc(x.msg) + '</span>') + '</li>').join('') + '</ul>' +
+      (okN ? '<div class="note" style="margin-top:12px">학부모 로그인: 자녀 이름 <b>' + esc(r.kid) + '</b> · 휴대폰 뒷번호 <b>' + esc(last4) + '</b></div>' : '') +
+      '<div class="sheet-act">' + (okN ? '<button class="btn line" data-act="reg-next" autofocus>같은 보호자의 다른 자녀 등록</button><button class="btn primary" data-act="reg-new">새 학생 등록</button>' : '<button class="btn line" data-act="close" autofocus>닫기</button>') + '</div>');
+    if (okN) { r.ids.clear(); await loadStaff(null, true); }
   } catch (e) { busy(btn, false); toast(e.message, true); }
+}
+function enrollHTML(d) {
+  const live = d.enrollments.filter(e => e.status !== '거절');
+  const bad = live.filter(e => e.bad && e.status === '수강');
+  return '<div class="card" style="margin-top:14px"><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:space-between"><b>수강생 명단</b><input class="input" id="enrQ" placeholder="이름 · 휴대폰 뒷번호 · 수업명으로 찾기" value="' + esc(S.q || '') + '" style="max-width:340px;min-height:42px;font-size:15px"></div>' +
+    (bad.length ? '<div class="note warn" style="margin-top:10px">수업을 찾을 수 없는 줄이 ' + bad.length + '개 있어요 (' + bad.slice(0, 3).map(e => esc(e.kid) + ' · ' + esc(e.className || '수업 없음')).join(', ') + (bad.length > 3 ? ' …' : '') + '). 스프레드시트 [수강] 탭에서 수업명이 [수업] 탭과 똑같은지 확인해 주세요.</div>' : '') +
+    '<div id="enrList" style="overflow:auto;margin-top:10px"></div></div>';
+}
+function renderEnrList() {
+  const box = $('#enrList'); if (!box || !S.sdata) return;
+  const q = String(S.q || '').replace(/\s/g, '');
+  const rows = S.sdata.enrollments.filter(e => e.status !== '거절').filter(e => !q || (e.kid + e.phone.replace(/\D/g, '') + e.className + e.guardian).replace(/\s/g, '').indexOf(q) >= 0)
+    .sort((a, b) => a.kid.localeCompare(b.kid, 'ko') || a.className.localeCompare(b.className, 'ko'));
+  const n = new Set(rows.filter(e => e.status === '수강').map(e => e.kid + e.phone)).size;
+  box.innerHTML = '<p class="xs muted" style="margin-bottom:6px">학생 ' + n + '명 · 수강 ' + rows.filter(e => e.status === '수강').length + '건' + (rows.length > 300 ? ' · 앞 300건만 표시 (검색해서 좁혀 주세요)' : '') + '</p>' +
+    (rows.length ? '<table class="tbl"><thead><tr><th>학생</th><th>보호자</th><th>수업</th><th>상태</th><th></th></tr></thead><tbody>' + rows.slice(0, 300).map(e => '<tr' + (e.status !== '수강' ? ' style="opacity:.55"' : '') + '><td><b>' + esc(e.kid) + '</b><br><span class="xs muted">' + (e.grade ? e.grade + '학년' : '') + (e.ban ? ' ' + esc(e.ban) + '반' : '') + '</span></td><td class="small">' + esc(e.phone) + (e.guardian ? '<br>' + esc(e.guardian) : '') + '</td><td class="small">' + esc(e.className || '(수업 없음)') + '</td><td>' + statusBadge(e.status) + '</td><td style="white-space:nowrap">' +
+      (e.status === '수강' ? '<button class="btn line sm" data-act="enr-st" data-eid="' + esc(e.eid) + '" data-st="취소">수강 취소</button>' : '<button class="btn line sm" data-act="enr-st" data-eid="' + esc(e.eid) + '" data-st="수강">되돌리기</button>') + '</td></tr>').join('') + '</tbody></table>' : '<div class="empty small">찾는 학생이 없어요.</div>');
 }
 
 /* ───────── 강사 · 관리자 ───────── */
@@ -526,9 +542,11 @@ function renderStaff() {
   const admin = d.role === 'admin';
   const on = d.classes.filter(c => c.session), offc = d.classes.filter(c => !c.session);
   let h = header((admin ? '관리자' : esc(d.teacher) + ' 선생님') + (d.school ? ' · ' + d.school : ''), '<button class="btn sm line" data-act="s-refresh">새로고침</button><button class="btn sm line" data-act="s-logout">나가기</button>');
-  if (admin) h += '<div class="tabs" role="tablist">' + [['roster', '출석부'], ['pending', '승인 대기' + (d.pending.length ? ' ' + d.pending.length : '')], ['pins', '강사 PIN']].map(t => '<button class="chip" role="tab" data-act="tab" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + '</button>').join('') + '</div>';
+  if (admin) h += '<div class="tabs" role="tablist">' + [['roster', '출석부'], ['reg', '수강 등록'], ['list', '수강생 명단 ' + new Set(d.enrollments.filter(e => e.status === '수강').map(e => e.kid + e.phone)).size + '명'], ['pins', '강사 PIN']].concat(d.pending.length ? [['pending', '승인 대기 ' + d.pending.length]] : []).map(t => '<button class="chip" role="tab" data-act="tab" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + '</button>').join('') + '</div>';
   if (admin && S.tab === 'pending') { h += pendingHTML(d); app.className = 'wrap wide'; app.innerHTML = h; return; }
   if (admin && S.tab === 'pins') { h += pinsHTML(d); app.className = 'wrap wide'; app.innerHTML = h; return; }
+  if (admin && S.tab === 'reg') { h += regFormHTML(); app.className = 'wrap wide'; app.innerHTML = h; renderClsList(); return; }
+  if (admin && S.tab === 'list') { h += enrollHTML(d); app.className = 'wrap wide'; app.innerHTML = h; renderEnrList(); return; }
   h += '<div class="datebar" style="margin-top:12px"><button class="btn sm line" data-act="day" data-n="-1" aria-label="전날">◀</button><div class="d">' + md(d.date) + (d.date === today ? '<small>오늘</small>' : '') + '</div><button class="btn sm line" data-act="day" data-n="1" aria-label="다음 날">▶</button>' +
     (d.date !== today ? '<button class="btn sm primary" data-act="today">오늘</button>' : '') + '<input type="date" value="' + d.date + '" data-act="pickdate" aria-label="날짜 고르기"></div>';
   // 앞으로 7일 결석 신고
@@ -606,9 +624,6 @@ document.addEventListener('click', async (ev) => {
     case 'close': modal(''); break;
     case 'home': nav(''); break;
     case 'back': history.length > 1 ? history.back() : nav(''); break;
-    case 'go-reg': nav('reg'); break;
-    case 'go-reg-more': nav('reg', 'more'); break;
-    case 'go-reg-kid': nav('reg', 'kid'); break;
     case 'logout': store.del('nb.parent'); S.parent = null; S.pdata = null; S.sel.clear(); renderDock(); renderHome(); break;
     case 'refresh': refreshMy(t); break;
     case 'kid': S.kid = t.dataset.kid; S.sel.clear(); renderMy(); break;
@@ -625,7 +640,9 @@ document.addEventListener('click', async (ev) => {
     case 'send-report': sendReport(t); break;
     case 'cancel': cancelReport(t.dataset.k); break;
     case 'do-cancel': doCancel(t, t.dataset.k); break;
-    case 'reg-done': modal(''); try { S.kid = 'all'; await doLogin(S.reg.kid, S.reg.phone, true); history.replaceState(null, '', location.pathname); } catch (e) { toast(e.message, true); renderHome(); } break;
+    case 'reg-next': { const r = S.reg; r.kid = ''; r.grade = ''; r.ban = ''; modal(''); renderStaff(); const k = $('#regForm [name=kid]'); if (k) k.focus(); break; }
+    case 'reg-new': S.reg = { kid: '', grade: '', ban: '', phone: '', guardian: '', ids: new Set() }; modal(''); renderStaff(); break;
+    case 'enr-st': busy(t, true); try { await rpc('setEnrollStatus', S.pin, t.dataset.eid, t.dataset.st); const e = S.sdata.enrollments.find(x => x.eid === t.dataset.eid); if (e) e.status = t.dataset.st; toast(t.dataset.st === '취소' ? '수강 취소했어요. 출석부와 학부모 화면에서 빠져요.' : '다시 수강 중으로 바꿨어요.'); renderEnrList(); } catch (e) { busy(t, false); toast(e.message, true); } break;
     // 강사·관리자
     case 's-refresh': loadStaff(t); break;
     case 's-logout': store.del(PIN_KEY); S.pin = ''; S.sdata = null; S.date = ''; renderPin(); break;
@@ -645,7 +662,7 @@ document.addEventListener('change', (ev) => {
   if (t.name === 'grade' && $('#regForm')) { S.reg.grade = t.value; renderClsList(); }
   if (t.dataset.cls) { t.checked ? S.reg.ids.add(t.dataset.cls) : S.reg.ids.delete(t.dataset.cls); t.closest('.cls-opt').classList.toggle('on', t.checked); }
 });
-document.addEventListener('input', (ev) => { if (ev.target.hasAttribute('data-phone')) { const el = ev.target; const v = fmtPhone(el.value); if (v !== el.value) el.value = v; } });
+document.addEventListener('input', (ev) => { if (ev.target.id === 'enrQ') { S.q = ev.target.value; renderEnrList(); return; } if (ev.target.hasAttribute('data-phone')) { const el = ev.target; const v = fmtPhone(el.value); if (v !== el.value) el.value = v; } });
 document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && $('#modal .scrim')) modal(''); });
 document.addEventListener('submit', async (ev) => {
   ev.preventDefault();
@@ -673,7 +690,6 @@ function nav(view, mode) {
 window.addEventListener('popstate', (e) => { modal(''); show((e.state && e.state.view) || (new URLSearchParams(location.search).get('page') || ''), e.state && e.state.mode); });
 function show(view, mode) {
   window.scrollTo(0, 0); $('#toast').classList.add('hidden');
-  if (view === 'reg') return renderReg(mode);
   if (S.pdata) return renderMy();
   renderHome();
 }
@@ -690,7 +706,6 @@ async function boot() {
   try { S.pub = await rpc('getPublic'); }
   catch (e) { app.innerHTML = header() + errBox(e.message); return; }
   if (S.pub.name) document.title = S.pub.name + (S.pub.school ? ' · ' + S.pub.school : '');
-  if (PAGE === 'reg') { renderReg(); return; }
   const saved = store.get('nb.parent');
   if (saved && saved.name && saved.phone) {
     app.innerHTML = header() + '<div class="loading"><span class="spin"></span> 우리 아이 수업 불러오는 중…</div>';
@@ -699,7 +714,8 @@ async function boot() {
   }
   renderHome();
 }
-history.replaceState({ view: PAGE === 'reg' ? 'reg' : '' }, '', location.href);
+if (PAGE === 'reg') history.replaceState({ view: '' }, '', location.pathname); // 예전 수강 등록 주소 → 첫 화면
+else history.replaceState({ view: '' }, '', location.href);
 boot();
 })();
 </script>
