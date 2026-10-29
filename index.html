@@ -165,6 +165,8 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .prog.off .nm{color:var(--fg-muted);text-decoration:line-through}
 .pin-big{font:30px var(--font-display);letter-spacing:.25em;color:var(--accent);text-align:center;background:var(--accent-pale);border-radius:14px;padding:12px;margin:8px 0}
 .readonly-note{display:flex;gap:8px;align-items:center}
+.stu-cls{display:grid;gap:8px;max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--accent-pale)}
+.stu-cls .check{align-items:flex-start}
 .typebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 4px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
 .typebar > b{font-size:13.5px;color:var(--fg-muted);margin-right:2px}
 .typebar .chip{display:inline-flex;align-items:center;gap:6px}
@@ -176,6 +178,22 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .cal-nav .cal-mh{margin:0;font-size:15px}
 .cal-nav button{min-width:40px;min-height:36px;border:1.5px solid var(--line);background:#fff;border-radius:10px;font-weight:700;color:var(--accent)}
 .cal-nav button:disabled{opacity:.35}
+.acal-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.acal-t{flex:1;text-align:center;font:21px var(--font-display)}
+.acal-t .xs{font-family:var(--font-body);display:block;margin-top:2px}
+.acal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.acal-g .dw{text-align:center;font-size:12px;color:var(--fg-muted);padding:2px 0}
+.acal-g .dw.sun,.ac.sun .n{color:#C2463B}.acal-g .dw.sat,.ac.sat .n{color:#3C6DB4}
+.ac{min-height:62px;border:1px solid transparent;border-radius:10px;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;padding:6px 2px;color:#A8B5A0}
+.ac .n{font-weight:700;font-size:14px}
+.ac.has{background:#fff;border-color:var(--line);color:var(--fg)}
+.ac .k{font-size:11.5px;font-weight:700;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:0 5px}
+.ac .r{font-size:11px;font-weight:700;color:var(--abs)}
+.ac.sel{background:var(--accent);border-color:var(--accent)}
+.ac.sel .n,.ac.sel .r{color:#fff}.ac.sel .k{background:#fff}
+.ac.today{box-shadow:0 0 0 2.5px var(--mark)}
+.today-chip{display:inline-block;background:var(--mark);color:var(--mark-ink);border-radius:999px;padding:1px 9px;font:600 12.5px var(--font-body);vertical-align:3px}
+@media (max-width:420px){.ac{min-height:52px}.ac .k{font-size:10.5px;padding:0 3px}.ac .r{font-size:10px}.acal-t{font-size:18px}}
 
 /* 하단 고정 바 */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
@@ -385,7 +403,7 @@ function renderMy() {
       k.classes.map(c => {
         const t = c.tot || {};
         const sum = (t.p ? '<span class="badge ok">출석 ' + t.p + '</span>' : '') + (t.a ? '<span class="badge abs">결석 ' + t.a + '</span>' : '') + (t.rep ? '<span class="badge warn">결석 신고 ' + t.rep + '</span>' : '');
-        return '<div class="kid-cls"><div class="row"><div style="min-width:0"><b>' + esc(c.name) + '</b>' + (c.type ? '<span class="tbadge">' + esc(c.type) + '</span>' : '') + (c.desc ? '<div class="xs" style="margin-top:2px">' + esc(c.desc) + '</div>' : '') +
+        return '<div class="kid-cls"><div class="row"><div style="min-width:0"><b>' + esc(c.name) + '</b>' + (c.type ? tbadges(c.type) : '') + (c.desc ? '<div class="xs" style="margin-top:2px">' + esc(c.desc) + '</div>' : '') +
           '<div class="xs muted" style="margin-top:2px">' + (c.term ? esc(c.term) + ' · ' : '') + (c.start ? esc(c.days) + ' ' + esc(c.start) + '–' + esc(c.end) : '일정 추후 안내') + (c.place ? ' · ' + esc(c.place) : '') + (c.teacher ? ' · ' + esc(c.teacher) : '') + '</div>' +
           (c.from ? '<div class="xs muted">' + esc(c.from.replace(/-/g, '.')) + ' ~ ' + esc((c.to || '').replace(/-/g, '.')) + '</div>' : '') +
           (sum ? '<div class="counts" style="justify-content:flex-start;margin-top:6px">' + sum + '</div>' : '') + '</div>' + statusBadge(c.status) + '</div>' +
@@ -541,7 +559,7 @@ function renderClsList() {
     const full = c.cap && c.count >= c.cap; const on = S.reg.ids.has(c.id);
     const left = c.cap ? (full ? '<span class="badge neutral">정원 마감</span>' : '<span class="badge ' + (c.cap - c.count <= 3 ? 'warn' : 'info') + '">' + (c.cap - c.count) + '자리 남음</span>') : '';
     const when = c.start ? esc(c.days) + ' ' + esc(c.start) + '–' + esc(c.end) : '<span class="tbd">일정 추후 안내</span>';
-    return termH + '<label class="cls-opt' + (on ? ' on' : '') + (full ? ' dis' : '') + '"><input type="checkbox" data-cls="' + esc(c.id) + '"' + (on ? ' checked' : '') + (full ? ' disabled' : '') + '><div><div class="nm">' + esc(c.name) + (S.type === 'all' && c.type ? '<span class="tbadge">' + esc(c.type) + '</span>' : '') + ' ' + left + '</div>' + (c.desc ? '<div class="desc">' + esc(c.desc) + '</div>' : '') + '<div class="meta">' + when + (c.place ? ' · ' + esc(c.place) : '') + (c.teacher ? ' · ' + esc(c.teacher) : '') + '</div><div class="meta">' + esc(gradeLabel(c.grade)) + (c.from ? ' · ' + esc(c.from.replace(/-/g, '.')) + ' ~ ' + esc((c.to || '').replace(/-/g, '.')) : '') + '</div></div></label>';
+    return termH + '<label class="cls-opt' + (on ? ' on' : '') + (full ? ' dis' : '') + '"><input type="checkbox" data-cls="' + esc(c.id) + '"' + (on ? ' checked' : '') + (full ? ' disabled' : '') + '><div><div class="nm">' + esc(c.name) + (S.type === 'all' && c.type ? tbadges(c.type) : '') + ' ' + left + '</div>' + (c.desc ? '<div class="desc">' + esc(c.desc) + '</div>' : '') + '<div class="meta">' + when + (c.place ? ' · ' + esc(c.place) : '') + (c.teacher ? ' · ' + esc(c.teacher) : '') + '</div><div class="meta">' + esc(gradeLabel(c.grade)) + (c.from ? ' · ' + esc(c.from.replace(/-/g, '.')) + ' ~ ' + esc((c.to || '').replace(/-/g, '.')) : '') + '</div></div></label>';
   }).join('') : '<div class="empty small">이 학년이 들을 수 있는 수업이 없어요.</div>';
 }
 /** 대상 학년 글자 → 학년 목록 (null = 전 학년). '1~6학년' '1학년~6학년' '초1-초6' '1, 3, 5' '전체' 모두 알아들음 */
@@ -580,15 +598,58 @@ function enrollHTML(d) {
     (bad.length ? '<div class="note warn" style="margin-top:10px">수업을 찾을 수 없는 줄이 ' + bad.length + '개 있어요 (' + bad.slice(0, 3).map(e => esc(e.kid) + ' · ' + esc(e.className || '수업 없음')).join(', ') + (bad.length > 3 ? ' …' : '') + '). 스프레드시트 [수강] 탭에서 수업명이 [수업] 탭과 똑같은지 확인해 주세요.</div>' : '') +
     '<div id="enrList" style="overflow:auto;margin-top:10px"></div></div>';
 }
+/** 수강생 명단 = 학생별 (같은 이름 + 보호자 휴대폰) 한 줄, [수정]으로 정보·수강 프로그램 변경 */
+function studentGroups(list) {
+  const g = {};
+  list.filter(e => e.status !== '거절').forEach(e => {
+    const k = e.kid.replace(/\s+/g, '') + '|' + e.phone.replace(/\D/g, '');
+    if (!g[k]) g[k] = { key: k, kid: e.kid, phone: e.phone, guardian: e.guardian, grade: e.grade, ban: e.ban, on: [], off: [] };
+    (e.status === '수강' ? g[k].on : g[k].off).push(e);
+    if (e.guardian && !g[k].guardian) g[k].guardian = e.guardian;
+  });
+  return Object.keys(g).map(k => g[k]);
+}
 function renderEnrList() {
   const box = $('#enrList'); if (!box || !S.sdata) return;
   const q = String(S.q || '').replace(/\s/g, '');
-  const rows = S.vd.enrollments.filter(e => e.status !== '거절').filter(e => !q || (e.kid + e.phone.replace(/\D/g, '') + e.className + e.guardian).replace(/\s/g, '').indexOf(q) >= 0)
-    .sort((a, b) => a.kid.localeCompare(b.kid, 'ko') || a.className.localeCompare(b.className, 'ko'));
-  const n = new Set(rows.filter(e => e.status === '수강').map(e => e.kid + e.phone)).size;
-  box.innerHTML = '<p class="xs muted" style="margin-bottom:6px">학생 ' + n + '명 · 수강 ' + rows.filter(e => e.status === '수강').length + '건' + (rows.length > 300 ? ' · 앞 300건만 표시 (검색해서 좁혀 주세요)' : '') + '</p>' +
-    (rows.length ? '<table class="tbl"><thead><tr><th>학생</th><th>보호자</th><th>수업</th><th>상태</th><th></th></tr></thead><tbody>' + rows.slice(0, 300).map(e => '<tr' + (e.status !== '수강' ? ' style="opacity:.55"' : '') + '><td><b>' + esc(e.kid) + '</b><br><span class="xs muted">' + (e.grade ? e.grade + '학년' : '') + (e.ban ? ' ' + esc(e.ban) + '반' : '') + '</span></td><td class="small">' + esc(e.phone) + (e.guardian ? '<br>' + esc(e.guardian) : '') + '</td><td class="small">' + esc(e.className || '(수업 없음)') + (S.type === 'all' && e.type ? '<span class="tbadge">' + esc(e.type) + '</span>' : '') + '</td><td>' + statusBadge(e.status) + '</td><td style="white-space:nowrap">' +
-      (e.status === '수강' ? '<button class="btn line sm" data-act="enr-st" data-eid="' + esc(e.eid) + '" data-st="취소">수강 취소</button>' : '<button class="btn line sm" data-act="enr-st" data-eid="' + esc(e.eid) + '" data-st="수강">되돌리기</button>') + '</td></tr>').join('') + '</tbody></table>' : '<div class="empty small">찾는 학생이 없어요.</div>');
+  const rows = studentGroups(S.vd.enrollments).filter(st => !q || (st.kid + st.phone.replace(/\D/g, '') + st.guardian + st.on.concat(st.off).map(e => e.className).join('')).replace(/\s/g, '').indexOf(q) >= 0)
+    .sort((a, b) => (b.on.length > 0) - (a.on.length > 0) || a.kid.localeCompare(b.kid, 'ko'));
+  const n = rows.filter(st => st.on.length).length;
+  box.innerHTML = '<p class="xs muted" style="margin-bottom:6px">학생 ' + n + '명 · 수강 ' + rows.reduce((a, st) => a + st.on.length, 0) + '건' + (rows.length > 300 ? ' · 앞 300명만 표시 (검색해서 좁혀 주세요)' : '') + ' · [수정]에서 이름·학년·반·보호자 번호와 수강 프로그램을 바꿀 수 있어요.</p>' +
+    (rows.length ? '<table class="tbl"><thead><tr><th>학생</th><th>보호자</th><th>수강 프로그램</th><th></th></tr></thead><tbody>' + rows.slice(0, 300).map(st => '<tr' + (st.on.length ? '' : ' style="opacity:.55"') + '><td><b>' + esc(st.kid) + '</b><br><span class="xs muted">' + (st.grade ? st.grade + '학년' : '') + (st.ban ? ' ' + esc(st.ban) + '반' : '') + '</span></td><td class="small">' + esc(st.phone) + (st.guardian ? '<br>' + esc(st.guardian) : '') + '</td><td class="small">' +
+      (st.on.length ? st.on.map(e => '<div>' + esc(e.className || '(수업 없음)') + (S.type === 'all' && e.type ? tbadges(e.type) : '') + '</div>').join('') : '<span class="muted">수강 중인 프로그램 없음</span>') + (st.off.length ? '<div class="xs muted">취소 ' + st.off.length + '건</div>' : '') + '</td>' +
+      '<td style="white-space:nowrap;text-align:right"><button class="btn line sm" data-act="stu-edit" data-k="' + esc(st.key) + '">수정</button></td></tr>').join('') + '</tbody></table>' : '<div class="empty small">찾는 학생이 없어요.</div>');
+}
+function openStudent(k) {
+  const st = studentGroups(S.sdata.enrollments).find(x => x.key === k); if (!st) return;
+  const mineIds = {}; st.on.forEach(e => { mineIds[e.classId] = 'on'; }); st.off.forEach(e => { if (!mineIds[e.classId]) mineIds[e.classId] = 'off'; });
+  // 고를 수 있는 프로그램: 지금 등록 가능한 프로그램 + 이 학생이 들었던 프로그램 (지금 고른 운영 유형 먼저)
+  const list = S.sdata.regClasses.slice();
+  st.on.concat(st.off).forEach(e => { if (!list.some(c => c.id === e.classId)) list.push({ id: e.classId, name: e.className || e.classId, type: e.type, term: '', grade: '', cap: 0, count: 0, ended: true }); });
+  const rank = (c) => mineIds[c.id] === 'on' ? 0 : mineIds[c.id] === 'off' ? 1 : inType(c.type) ? 2 : 3; // 수강 중 → 취소됨 → 고른 유형 → 나머지
+  list.sort((a, b) => (rank(a) - rank(b)) || String(a.term).localeCompare(String(b.term), 'ko') || a.name.localeCompare(b.name, 'ko'));
+  modal('<h2>학생 수정</h2><form id="stuForm" data-k="' + esc(k) + '" data-kid="' + esc(st.kid) + '" data-phone="' + esc(st.phone) + '" class="form-grid">' +
+    '<label class="field"><span>학생 이름</span><input class="input" name="kid" required maxlength="20" value="' + esc(st.kid) + '"></label>' +
+    '<label class="field"><span>학년</span><select class="input" name="grade" required>' + [1, 2, 3, 4, 5, 6].map(g => '<option value="' + g + '"' + (g === st.grade ? ' selected' : '') + '>' + g + '학년</option>').join('') + '</select></label>' +
+    '<label class="field"><span>반</span><input class="input" name="ban" inputmode="numeric" maxlength="2" value="' + esc(st.ban) + '"></label>' +
+    '<label class="field"><span>보호자 휴대폰</span><input class="input" name="phone" required inputmode="numeric" maxlength="13" value="' + esc(st.phone) + '" data-phone></label>' +
+    '<label class="field"><span>보호자 이름</span><input class="input" name="guardian" maxlength="20" value="' + esc(st.guardian) + '"></label>' +
+    '<div class="field wide"><span>수강 프로그램 <em>(체크 = 수강, 체크를 빼면 수강 취소)</em></span><div class="stu-cls">' + list.map(c => {
+      const was = mineIds[c.id]; const full = !was && c.cap && c.count >= c.cap;
+      return '<label class="check' + (full ? ' muted' : '') + '"><input type="checkbox" name="cls" value="' + esc(c.id) + '"' + (was === 'on' ? ' checked' : '') + (full ? ' disabled' : '') + '> <span><b>' + esc(c.name) + '</b>' + (c.type ? tbadges(c.type) : '') + (was === 'off' ? ' <span class="badge neutral">취소됨</span>' : '') + (c.ended ? ' <span class="badge neutral">운영 종료</span>' : '') + (full ? ' <span class="badge neutral">정원 마감</span>' : '') +
+        '<span class="xs muted"> ' + [c.term, c.start ? c.days + ' ' + c.start : (c.ended ? '' : '일정 미정'), c.grade ? gradeLabel(c.grade) : ''].filter(Boolean).map(esc).join(' · ') + '</span></span></label>';
+    }).join('') + '</div></div>' +
+    '<p class="xs muted wide">이름이나 휴대폰 번호를 바꾸면 학부모는 바뀐 이름 + 새 번호 뒷 4자리로 로그인해요. 지난 출결 기록은 그대로 남아요.</p>' +
+    '<div class="sheet-act wide"><button class="btn line" type="button" data-act="close">닫기</button><button class="btn primary" type="submit">저장</button></div></form>');
+}
+async function saveStudent(f) {
+  const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true);
+  try {
+    const r = await rpc('updateStudent', S.pin, { kid: f.dataset.kid, phone: f.dataset.phone }, { kid: fd.get('kid'), grade: fd.get('grade'), ban: fd.get('ban'), phone: fd.get('phone'), guardian: fd.get('guardian') }, fd.getAll('cls'));
+    const bad = r.results.filter(x => !x.ok);
+    modal(''); toast(bad.length ? '저장했어요. 다만 ' + bad.map(x => (x.name || x.classId) + ': ' + x.msg).join(', ') : '저장했어요.' + (r.results.length ? ' (' + r.results.map(x => x.name + ' ' + x.msg).join(', ') + ')' : ''), !!bad.length);
+    await loadStaff(null, true);
+  } catch (e) { busy(btn, false); toast(e.message, true); }
 }
 
 /* ───────── 강사 · 관리자 ───────── */
@@ -622,8 +683,11 @@ function counts(c) {
   c.roster.forEach(s => { if (s.report) n.rep++; if (s.att === '출석') n.p++; else if (s.att === '결석') n.a++; else if (!s.report) n.none++; });
   return n;
 }
+/** 운영 유형: 프로그램은 여러 개 가능 ('초등학교, 마을학교') */
+function typeList(v) { return String(v || '').split(/[,，\/]/).map(x => x.trim()).filter((x, i, a) => x && a.indexOf(x) === i); }
+function tbadges(v) { return typeList(v).map(t => '<span class="tbadge">' + esc(t) + '</span>').join(''); }
 /** 관리자 데이터를 고른 운영 유형으로 거름 */
-function inType(t) { return S.type === 'all' || (S.type === '_none' ? !t : t === S.type); }
+function inType(t) { const l = typeList(t); return S.type === 'all' || (S.type === '_none' ? !l.length : l.indexOf(S.type) >= 0); }
 function filterType(d) {
   if (S.type === 'all') return d;
   const cls = d.classes.filter(c => inType(c.type)); const ids = {}; cls.forEach(c => { ids[c.id] = true; });
@@ -631,9 +695,35 @@ function filterType(d) {
     classes: cls, upcoming: d.upcoming.filter(u => ids[u.classId]),
     regClasses: d.regClasses.filter(c => inType(c.type)), enrollments: d.enrollments.filter(e => inType(e.type)),
     programs: d.programs.filter(p => inType(p.type)), pending: d.pending.filter(p => inType(p.type)),
-    teachers: d.teachers.filter(t => S.type === '_none' ? !t.type && !t.types.length : (t.type === S.type || t.types.indexOf(S.type) >= 0)),
+    teachers: d.teachers.filter(t => S.type === '_none' ? !typeList(t.type).length && !t.types.length : (typeList(t.type).indexOf(S.type) >= 0 || t.types.indexOf(S.type) >= 0)),
     offs: d.offs.filter(o => !o.cls || inType(o.type)),
   });
+}
+/** 관리자 출석부 달력: 날짜마다 수업 수 · 결석 신고 수, 누르면 그날 프로그램 출석부 */
+function adminCalHTML(d, today) {
+  const M = d.month || { ym: d.date.slice(0, 7), days: {}, rep: {}, att: {} };
+  const ok = {}; d.classes.forEach(c => { ok[c.id] = c; });
+  const ym = M.ym, y = +ym.slice(0, 4), m = +ym.slice(5, 7);
+  const pad = (v) => (v < 10 ? '0' : '') + v;
+  const dim = new Date(Date.UTC(y, m, 0)).getUTCDate(), lead = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+  let totS = 0, totR = 0;
+  let g = '';
+  for (let i = 0; i < lead; i++) g += '<div></div>';
+  for (let dd = 1; dd <= dim; dd++) {
+    const ymd = ym + '-' + pad(dd);
+    const ids = (M.days[ymd] || []).filter(id => ok[id]);
+    const r = ids.reduce((a, id) => a + ((M.rep[ymd] || {})[id] || 0), 0);
+    const done = ids.length && ids.every(id => (M.att[ymd] || {})[id]);
+    totS += ids.length; totR += r;
+    const cls = 'ac' + (ids.length ? ' has' : '') + (ymd === d.date ? ' sel' : '') + (ymd === today ? ' today' : '') + (dowOf(ymd) === 0 ? ' sun' : dowOf(ymd) === 6 ? ' sat' : '');
+    const lab = mdShort(ymd) + (ids.length ? ' 수업 ' + ids.length + '개' + (r ? ', 결석 신고 ' + r + '건' : '') : ' 수업 없음');
+    g += '<button class="' + cls + '" data-act="acal-day" data-d="' + ymd + '" aria-label="' + esc(lab) + '" aria-pressed="' + (ymd === d.date) + '"><span class="n">' + dd + '</span>' +
+      (ids.length ? '<span class="k">' + ids.length + '개' + (done && ymd <= today ? ' ✓' : '') + '</span>' : '') + (r ? '<span class="r">신고 ' + r + '</span>' : '') + '</button>';
+  }
+  return '<div class="card acal" style="margin-top:12px"><div class="acal-top"><button class="btn sm line" data-act="acal-mon" data-n="-1" aria-label="이전 달">◀</button><div class="acal-t">' + y + '년 ' + m + '월 <span class="xs muted">' + (typeLabel() ? esc(typeLabel()) + ' · ' : '') + '수업 ' + totS + '회' + (totR ? ' · 결석 신고 ' + totR + '건' : '') + '</span></div><button class="btn sm line" data-act="acal-mon" data-n="1" aria-label="다음 달">▶</button>' +
+    (d.date !== today ? '<button class="btn sm primary" data-act="today">오늘</button>' : '') + '</div>' +
+    '<div class="acal-g">' + DOW.split('').map((w, i) => '<div class="dw' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '') + '">' + w + '</div>').join('') + g + '</div>' +
+    '<p class="xs muted" style="margin-top:8px">날짜를 누르면 아래에 그날 프로그램 출석부가 보여요. 숫자 = 그날 수업 수 · ✓ = 출결 체크 끝 · 빨간 글씨 = 학부모 결석 신고</p></div>';
 }
 function typeLabel() { return S.type === 'all' ? '' : S.type === '_none' ? '유형 미지정' : S.type; }
 function renderStaff() {
@@ -650,8 +740,8 @@ function renderStaff() {
   if (admin) {
     if (S.type !== 'all' && S.type !== '_none' && d.types.indexOf(S.type) < 0) S.type = 'all';
     const live = d.programs.filter(p => p.use);
-    const none = live.filter(p => !p.type).length;
-    if (S.tab !== 'set') h += '<div class="typebar" role="group" aria-label="운영 유형"><b>운영 유형</b>' + [['all', '전체', live.length]].concat(d.types.map(t => [t, t, live.filter(p => p.type === t).length])).concat(none ? [['_none', '유형 미지정', none]] : [])
+    const none = live.filter(p => !typeList(p.type).length).length;
+    if (S.tab !== 'set') h += '<div class="typebar" role="group" aria-label="운영 유형"><b>운영 유형</b>' + [['all', '전체', live.length]].concat(d.types.map(t => [t, t, live.filter(p => typeList(p.type).indexOf(t) >= 0).length])).concat(none ? [['_none', '유형 미지정', none]] : [])
       .map(t => '<button class="chip" data-act="type" data-type="' + esc(t[0]) + '" aria-pressed="' + (S.type === t[0]) + '">' + esc(t[1]) + ' <small>' + t[2] + '</small></button>').join('') + '</div>';
     d = filterType(d);
   }
@@ -665,13 +755,14 @@ function renderStaff() {
   if (admin && S.tab === 'set') return only(setHTML(d));
   if (admin && S.tab === 'reg') { h += regFormHTML(); app.className = 'wrap wide'; app.innerHTML = h; renderClsList(); return; }
   if (admin && S.tab === 'list') { h += enrollHTML(d); app.className = 'wrap wide'; app.innerHTML = h; renderEnrList(); return; }
-  h += '<div class="datebar" style="margin-top:12px"><button class="btn sm line" data-act="day" data-n="-1" aria-label="전날">◀</button><div class="d">' + md(d.date) + (d.date === today ? '<small>오늘</small>' : '') + '</div><button class="btn sm line" data-act="day" data-n="1" aria-label="다음 날">▶</button>' +
+  if (admin) h += adminCalHTML(d, today); else h += '<div class="datebar" style="margin-top:12px"><button class="btn sm line" data-act="day" data-n="-1" aria-label="전날">◀</button><div class="d">' + md(d.date) + (d.date === today ? '<small>오늘</small>' : '') + '</div><button class="btn sm line" data-act="day" data-n="1" aria-label="다음 날">▶</button>' +
     (d.date !== today ? '<button class="btn sm primary" data-act="today">오늘</button>' : '') + '<input type="date" value="' + d.date + '" data-act="pickdate" aria-label="날짜 고르기"></div>';
   // 앞으로 7일 결석 신고
   if (d.upcoming.length) {
     h += '<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><b>앞으로 7일 결석 신고 ' + d.upcoming.length + '건</b><span class="xs muted">수업 날짜 순</span></div><ul class="up">' +
       d.upcoming.slice(0, admin ? 60 : 30).map(u => '<li><span class="dt">' + mdShort(u.date) + ' ' + esc(u.start) + '</span><span><b>' + esc(u.kid) + '</b> <span class="xs muted">' + esc(u.gb) + (on.length + offc.length > 1 ? ' · ' + esc(u.className) : '') + '</span><br><span class="small" style="color:var(--abs)">' + esc(u.reason) + (u.memo ? ' · ' + esc(u.memo) : '') + '</span> <span class="xs muted">' + stamp(u.reportAt) + ' 신고</span></span></li>').join('') + '</ul></div>';
   }
+  if (admin) h += '<h2 class="sec-title" style="margin-top:18px"><span>' + md(d.date) + (d.date === today ? ' <span class="today-chip">오늘</span>' : '') + '</span><span class="xs muted">' + (on.length ? '프로그램 ' + on.length + '개' : '') + '</span></h2>';
   if (!on.length) {
     const nexts = d.classes.map(c => c.next).filter(Boolean).sort();
     h += '<div class="card empty" style="margin-top:14px">이 날은 ' + (admin ? (typeLabel() ? typeLabel() + ' ' : '') : '담당 ') + '수업이 없어요.' + (d.classes.some(c => c.off && !c.session) ? '<br><span class="small">(' + esc(d.classes.find(c => c.off).off) + ')</span>' : '') + (nexts[0] ? '<br><button class="btn line sm" style="margin-top:12px" data-act="goto" data-d="' + nexts[0] + '">다음 수업일 ' + mdShort(nexts[0]) + ' →</button>' : '') + '</div>';
@@ -690,7 +781,7 @@ function renderStaff() {
 function clsHTML(c, admin) {
   const n = counts(c); const open = admin ? !!S.open[c.id] : S.open[c.id] !== false;
   const canMark = !c.future;
-  let h = '<section class="card cls"><button class="cls-h' + (admin ? ' tog' : '') + '"' + (admin ? ' data-act="toggle" data-id="' + esc(c.id) + '" aria-expanded="' + open + '"' : '') + '><div><h3>' + esc(c.name) + (admin && S.type === 'all' && c.type ? '<span class="tbadge">' + esc(c.type) + '</span>' : '') + '</h3><div class="meta">' + esc(c.start) + '–' + esc(c.end) + (c.place ? ' · ' + esc(c.place) : '') + (admin && c.teacher ? ' · ' + esc(c.teacher) : '') + '</div></div><div class="counts"><span class="badge info">' + n.all + '명</span>' + (n.rep ? '<span class="badge abs">결석 신고 ' + n.rep + '</span>' : '') + (n.p ? '<span class="badge ok">출석 ' + n.p + '</span>' : '') + (n.a ? '<span class="badge abs">결석 ' + n.a + '</span>' : '') + (canMark && n.none ? '<span class="badge neutral">미확인 ' + n.none + '</span>' : '') + '</div></button>';
+  let h = '<section class="card cls"><button class="cls-h' + (admin ? ' tog' : '') + '"' + (admin ? ' data-act="toggle" data-id="' + esc(c.id) + '" aria-expanded="' + open + '"' : '') + '><div><h3>' + esc(c.name) + (admin && S.type === 'all' && c.type ? tbadges(c.type) : '') + '</h3><div class="meta">' + esc(c.start) + '–' + esc(c.end) + (c.place ? ' · ' + esc(c.place) : '') + (admin && c.teacher ? ' · ' + esc(c.teacher) : '') + '</div></div><div class="counts"><span class="badge info">' + n.all + '명</span>' + (n.rep ? '<span class="badge abs">결석 신고 ' + n.rep + '</span>' : '') + (n.p ? '<span class="badge ok">출석 ' + n.p + '</span>' : '') + (n.a ? '<span class="badge abs">결석 ' + n.a + '</span>' : '') + (canMark && n.none ? '<span class="badge neutral">미확인 ' + n.none + '</span>' : '') + '</div></button>';
   if (!open) return h + '</section>';
   h += '<div class="cls-b">';
   if (!c.roster.length) return h + '<div class="empty small">수강생이 없어요.</div></div></section>';
@@ -724,7 +815,7 @@ function progHTML(d) {
     '<p class="xs muted" style="margin:6px 0 4px">이름 · 강사 · 요일 · 시간 · 기간 · 장소 · 대상 학년 · 정원 · 주요 내용을 여기서 고칠 수 있어요. 고치면 학부모·강사 화면에 바로 반영돼요.</p>';
   h += ps.map(p => {
     const th = (p.term || '') !== lastTerm ? (lastTerm = p.term || '', '<div class="term-h">' + esc(p.term || '운영 구분 없음') + '</div>') : '';
-    return th + '<div class="prog' + (p.use ? '' : ' off') + '"><div><div class="nm">' + esc(p.name) + (S.type === 'all' ? (p.type ? '<span class="tbadge">' + esc(p.type) + '</span>' : '<span class="tbadge none">유형 미지정</span>') : '') + (p.use ? '' : ' <span class="badge neutral">숨김</span>') + '</div>' + (p.desc ? '<div class="xs">' + esc(p.desc) + '</div>' : '') +
+    return th + '<div class="prog' + (p.use ? '' : ' off') + '"><div><div class="nm">' + esc(p.name) + (S.type === 'all' ? (typeList(p.type).length ? tbadges(p.type) : '<span class="tbadge none">유형 미지정</span>') : tbadges(p.type)) + (p.use ? '' : ' <span class="badge neutral">숨김</span>') + '</div>' + (p.desc ? '<div class="xs">' + esc(p.desc) + '</div>' : '') +
       '<div class="xs muted">' + (p.start ? esc(p.daysText) + ' ' + esc(p.start) + '–' + esc(p.end) : '<span class="tbd">일정 미정</span>') + ' · ' + (p.teacher ? esc(p.teacher) : '<span class="tbd">강사 미정</span>') + (p.place ? ' · ' + esc(p.place) : '') + ' · ' + esc(gradeLabel(p.grade)) + ' · ' + p.count + (p.cap ? '/' + p.cap : '') + '명' + (p.from ? ' · ' + esc(p.from.replace(/-/g, '.')) + '~' + esc((p.to || '').replace(/-/g, '.')) : '') + '</div></div>' +
       '<button class="btn line sm" data-act="prog-edit" data-id="' + esc(p.id) + '">수정</button></div>';
   }).join('');
@@ -739,11 +830,11 @@ function progHTML(d) {
 function openProg(id) {
   const d = S.sdata;
   const p = d.programs.find(x => x.id === id) || { id: '', type: S.type !== 'all' && S.type !== '_none' ? S.type : '', name: '', teacher: '', days: [], start: '', end: '', place: '', grade: '1~6학년', cap: '', from: '', to: '', use: true, term: (d.programs[0] || {}).term || '', desc: '' };
-  const names = d.teachers.filter(t => t.use || t.name === p.teacher).sort((a, b) => ((b.type === p.type) - (a.type === p.type)) || a.name.localeCompare(b.name, 'ko')).map(t => t.name + (t.type ? '|' + t.type : ''));
+  const names = d.teachers.filter(t => t.use || t.name === p.teacher).sort((a, b) => { const pt = typeList(p.type), m = (t) => typeList(t.type).some(x => pt.indexOf(x) >= 0) ? 1 : 0; return (m(b) - m(a)) || a.name.localeCompare(b.name, 'ko'); }).map(t => t.name + (t.type ? '|' + t.type : ''));
   if (p.teacher && !names.some(v => v.split('|')[0] === p.teacher)) names.unshift(p.teacher);
   modal('<h2>' + (id ? '프로그램 수정' : '새 프로그램') + '</h2><form id="progForm" data-id="' + esc(p.id) + '" class="form-grid">' +
     '<label class="field wide"><span>프로그램 이름</span><input class="input" name="name" required maxlength="40" value="' + esc(p.name) + '"></label>' +
-    '<label class="field"><span>운영 유형</span><select class="input" name="type"><option value="">(미지정)</option>' + d.types.map(t => '<option' + (t === p.type ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></label>' +
+    '<div class="field wide"><span>운영 유형 <em>(여러 개 고를 수 있어요)</em></span><div class="daypick">' + d.types.map(t => '<label><input type="checkbox" name="ptype" value="' + esc(t) + '"' + (typeList(p.type).indexOf(t) >= 0 ? ' checked' : '') + '><span style="padding:0 12px">' + esc(t) + '</span></label>').join('') + '</div></div>' +
     '<label class="field"><span>운영 구분 <em>(예: 2026 겨울방학)</em></span><input class="input" name="term" maxlength="30" value="' + esc(p.term) + '"></label>' +
     '<label class="field"><span>강사</span><select class="input" name="teacher"><option value="">(미정)</option>' + names.map(v => { const n = v.split('|')[0], ty = v.split('|')[1]; return '<option value="' + esc(n) + '"' + (n === p.teacher ? ' selected' : '') + '>' + esc(n) + (ty ? ' · ' + esc(ty) : '') + '</option>'; }).join('') + '</select></label>' +
     '<label class="field wide"><span>주요 내용</span><textarea class="input" name="desc" maxlength="200">' + esc(p.desc) + '</textarea></label>' +
@@ -760,7 +851,7 @@ function openProg(id) {
 }
 async function saveProg(f) {
   const fd = new FormData(f);
-  const p = { id: f.dataset.id, type: fd.get('type'), name: fd.get('name'), term: fd.get('term'), teacher: fd.get('teacher'), desc: fd.get('desc'), days: fd.getAll('days').map(Number), start: fd.get('start'), end: fd.get('end'), from: fd.get('from'), to: fd.get('to'), place: fd.get('place'), grade: fd.get('grade'), cap: fd.get('cap'), use: !!fd.get('use') };
+  const p = { id: f.dataset.id, type: fd.getAll('ptype'), name: fd.get('name'), term: fd.get('term'), teacher: fd.get('teacher'), desc: fd.get('desc'), days: fd.getAll('days').map(Number), start: fd.get('start'), end: fd.get('end'), from: fd.get('from'), to: fd.get('to'), place: fd.get('place'), grade: fd.get('grade'), cap: fd.get('cap'), use: !!fd.get('use') };
   const btn = f.querySelector('[type=submit]'); busy(btn, true);
   try { const r = await rpc('saveClass', S.pin, p); modal(''); toast(r.warn || '저장했어요.', !!r.warn); await loadStaff(null, true); }
   catch (e) { busy(btn, false); toast(e.message, true); }
@@ -773,7 +864,7 @@ function tchHTML(d) {
     '<form id="tchForm" class="form-grid"><label class="field"><span>강사 이름</span><input class="input" name="name" required maxlength="20" placeholder="예: 김민지"></label><label class="field"><span>운영 유형</span><select class="input" name="type"><option value="">(미지정)</option>' + d.types.map(t => '<option' + (t === S.type ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></label><label class="field"><span>연락처 <em>(선택)</em></span><input class="input" name="phone" maxlength="20" inputmode="tel" data-phone></label><div class="field" style="align-self:end"><button class="btn primary block" type="submit">강사 등록</button></div></form></div>';
   if (d.unassigned && d.unassigned.length) h += '<div class="note warn" style="margin-top:14px">강사 목록에 없는 이름이 프로그램에 적혀 있어요: ' + d.unassigned.map(esc).join(', ') + '. 그 이름으로 강사를 등록하면 PIN 으로 들어갈 수 있어요.</div>';
   h += '<div class="card" style="margin-top:14px;overflow:auto"><b>' + (typeLabel() ? esc(typeLabel()) + ' ' : '') + '강사 ' + d.teachers.length + '명</b>' + (d.teachers.length ? '<table class="tbl" style="margin-top:8px"><thead><tr><th>이름</th><th>운영 유형</th><th>PIN</th><th>연락처</th><th>맡은 프로그램</th><th></th></tr></thead><tbody>' +
-    d.teachers.map(t => '<tr' + (t.use ? '' : ' style="opacity:.55"') + '><td><b>' + esc(t.name) + '</b>' + (t.use ? '' : '<br><span class="badge neutral">사용 중지</span>') + '</td><td class="small">' + esc([t.type].concat(t.types.filter(x => x !== t.type)).filter(Boolean).join(', ') || '미지정') + '</td><td style="font:600 17px var(--font-body);letter-spacing:.08em">' + esc(t.pin) + '</td><td class="small">' + esc(t.phone) + '</td><td class="small">' + (t.classes.length ? t.classes.map(esc).join(', ') : '<span class="muted">없음</span>') + '</td><td style="white-space:nowrap;text-align:right"><button class="btn line sm" data-act="tch-edit" data-n="' + esc(t.name) + '">수정</button> <button class="btn line sm" data-act="tch-pin" data-n="' + esc(t.name) + '">PIN 새로</button> <button class="btn line sm" data-act="tch-del" data-n="' + esc(t.name) + '"' + (t.classes.length ? ' disabled title="맡은 프로그램이 있으면 삭제할 수 없어요"' : '') + '>삭제</button></td></tr>').join('') + '</tbody></table>' : '<div class="empty small">등록된 강사가 없어요.</div>') + '</div>';
+    d.teachers.map(t => '<tr' + (t.use ? '' : ' style="opacity:.55"') + '><td><b>' + esc(t.name) + '</b>' + (t.use ? '' : '<br><span class="badge neutral">사용 중지</span>') + '</td><td class="small">' + esc(typeList(t.type).concat(t.types).filter((x, i, a) => a.indexOf(x) === i).join(', ') || '미지정') + '</td><td style="font:600 17px var(--font-body);letter-spacing:.08em">' + esc(t.pin) + '</td><td class="small">' + esc(t.phone) + '</td><td class="small">' + (t.classes.length ? t.classes.map(esc).join(', ') : '<span class="muted">없음</span>') + '</td><td style="white-space:nowrap;text-align:right"><button class="btn line sm" data-act="tch-edit" data-n="' + esc(t.name) + '">수정</button> <button class="btn line sm" data-act="tch-pin" data-n="' + esc(t.name) + '">PIN 새로</button> <button class="btn line sm" data-act="tch-del" data-n="' + esc(t.name) + '"' + (t.classes.length ? ' disabled title="맡은 프로그램이 있으면 삭제할 수 없어요"' : '') + '>삭제</button></td></tr>').join('') + '</tbody></table>' : '<div class="empty small">등록된 강사가 없어요.</div>') + '</div>';
   return h;
 }
 function openTch(name) {
@@ -852,6 +943,13 @@ document.addEventListener('click', async (ev) => {
     case 's-logout': store.del(PIN_KEY); S.pin = ''; S.sdata = null; S.date = ''; renderPin(); break;
     case 'day': S.date = addDays(S.date, Number(t.dataset.n)); loadStaff(t); break;
     case 'today': S.date = ''; loadStaff(t); break;
+    case 'acal-day': if (t.dataset.d !== S.date) { S.date = t.dataset.d; loadStaff(t); } break;
+    case 'acal-mon': {
+      const ym = (S.sdata.month && S.sdata.month.ym) || S.date.slice(0, 7);
+      let y = +ym.slice(0, 4), m = +ym.slice(5, 7) + Number(t.dataset.n); if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; }
+      const nym = y + '-' + (m < 10 ? '0' : '') + m;
+      S.date = S.sdata.now.date.slice(0, 7) === nym ? S.sdata.now.date : nym + '-01'; loadStaff(t); break;
+    }
     case 'goto': S.date = t.dataset.d; loadStaff(t); break;
     case 'toggle': S.open[t.dataset.id] = !S.open[t.dataset.id]; renderStaff(); break;
     case 'type': S.type = t.dataset.type; store.set('nb.type', S.type); S.reg.ids.clear(); $('#toast').classList.add('hidden'); renderStaff(); break;
@@ -859,6 +957,7 @@ document.addEventListener('click', async (ev) => {
     case 'mark': mark(t); break;
     case 'bulk': bulk(t); break;
     case 'prog-edit': openProg(t.dataset.id); break;
+    case 'stu-edit': openStudent(t.dataset.k); break;
     case 'off-del': busy(t, true); try { await rpc('saveOff', S.pin, t.dataset.date, t.dataset.cls, '', false); toast('휴강일을 지웠어요.'); await loadStaff(null, true); } catch (e) { busy(t, false); toast(e.message, true); } break;
     case 'tch-edit': openTch(t.dataset.n); break;
     case 'tch-pin': busy(t, true); try { const r = await rpc('resetTeacherPin', S.pin, t.dataset.n); await loadStaff(null, true); pinModal('새 PIN', r); } catch (e) { busy(t, false); toast(e.message, true); } break;
@@ -884,6 +983,7 @@ document.addEventListener('submit', async (ev) => {
   }
   if (f.id === 'regForm') submitReg(f);
   if (f.id === 'progForm') saveProg(f);
+  if (f.id === 'stuForm') saveStudent(f);
   if (f.id === 'offForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { await rpc('saveOff', S.pin, fd.get('date'), fd.get('cls'), fd.get('reason'), true); toast('휴강일을 추가했어요.'); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
   if (f.id === 'tchForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { const r = await rpc('saveTeacher', S.pin, { name: fd.get('name'), phone: fd.get('phone'), type: fd.get('type') }); await loadStaff(null, true); pinModal('강사 등록 완료', r); } catch (e) { busy(btn, false); toast(e.message, true); } }
   if (f.id === 'tchEdit') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { await rpc('saveTeacher', S.pin, { oldName: f.dataset.old, name: fd.get('name'), phone: fd.get('phone'), type: fd.get('type'), use: !!fd.get('use') }); modal(''); toast('저장했어요.'); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
