@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FFF9EC">
+<meta name="theme-color" content="#F2F9E6">
 <title>2026 초등학교 방과후 프로그램(방학집중형) 출결</title>
 <!-- ★★★ 여기 한 줄만 고치면 됩니다 ★★★
      Apps Script [배포 > 배포 관리]의 웹 앱 URL (https://script.google.com/macros/s/…/exec) 을 따옴표 안에 붙여넣으세요. -->
@@ -13,15 +13,16 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
 :root{
-  --bg:#FFF9EC; --surface:#FFFFFF; --surface-2:#F6F1E4; --fg:#1E2A44; --fg-muted:#5E6780; --line:#EADFC8;
-  --accent:#1F78D1; --accent-ink:#fff; --accent-soft:#DDEBFB;
-  --mark:#FFC93C; --mark-ink:#3A2A05;
-  --ok:#1C8A50; --ok-soft:#DDF4E6; --abs:#D23B30; --abs-soft:#FDE4E1; --warn:#B45F06; --warn-soft:#FFEBD2;
-  --neutral:#6E7488; --neutral-soft:#EEEBF3;
-  --fun1:#FF6B6B; --fun2:#FFC93C; --fun3:#3CCB8B; --fun4:#4DA3FF; --fun5:#A98BFF;
+  /* 파스텔 연두 테마 */
+  --bg:#F2F9E6; --surface:#FFFFFF; --surface-2:#EAF5DC; --fg:#24361D; --fg-muted:#5E7155; --line:#D4E7C0;
+  --accent:#3F8526; --accent-ink:#fff; --accent-soft:#E0F1CF; --accent-pale:#F5FBEE;
+  --mark:#FFE07A; --mark-ink:#3D3205;
+  --ok:#1A8466; --ok-soft:#D6F1E7; --abs:#D23B30; --abs-soft:#FDE4E1; --warn:#B45F06; --warn-soft:#FFEBD2;
+  --neutral:#6B7766; --neutral-soft:#ECF0E8;
+  --fun1:#C9EBA8; --fun2:#B3E08D; --fun3:#9BD472; --fun4:#B3E08D; --fun5:#C9EBA8;
   --font-display:'Do Hyeon','IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
   --font-body:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',sans-serif;
-  --radius:16px; --shadow:0 1px 2px rgba(30,42,68,.06),0 10px 22px -16px rgba(30,42,68,.35);
+  --radius:16px; --shadow:0 1px 2px rgba(36,54,29,.06),0 10px 22px -16px rgba(36,54,29,.32);
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -119,10 +120,51 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .pick{min-height:44px;min-width:92px;border-radius:12px;border:1.5px solid var(--abs);background:#fff;color:var(--abs);font-weight:700;padding:0 12px}
 .pick[aria-pressed="true"]{background:var(--abs);color:#fff}
 .past-toggle{margin-top:22px}
-.kid-cls{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px 0;border-top:1px dashed var(--line);font-size:14.5px}
+.kid-cls{display:block;padding:12px 0;border-top:1px dashed var(--line);font-size:14.5px}
 .kid-cls:first-of-type{border-top:0}
 .kid-card .kid-h{padding-bottom:6px}
 .kid-card .kid-h + .kid-cls{border-top:1px dashed var(--line)}
+
+/* 출결 달력 (학부모) */
+.kid-cls .row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.cal-wrap{margin-top:10px;background:var(--accent-pale);border:1px solid var(--line);border-radius:14px;padding:10px 10px 8px}
+.cal-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.cal-top b{font:16px var(--font-display);color:var(--accent);white-space:nowrap}
+.cal-top .xs{flex:1;text-align:right}
+.cal-month + .cal-month{margin-top:10px}
+.cal-mh{font-weight:700;font-size:13.5px;margin:2px 0 4px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal .dw{font-size:11.5px;color:var(--fg-muted);text-align:center;padding:2px 0}
+.cal .dw.sun{color:#C2463B}.cal .dw.sat{color:#3C6DB4}
+.cal .c{aspect-ratio:1/1;min-height:34px;border-radius:9px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px;line-height:1.05;color:#A8B5A0;background:transparent;border:0;padding:0}
+.cal .c i{font-style:normal;font-size:10.5px;font-weight:700;margin-top:2px}
+.cal .c.s{cursor:pointer;color:var(--fg);font-weight:600}
+.cal .c.p{background:var(--ok-soft);color:var(--ok)}
+.cal .c.a{background:var(--abs);color:#fff}
+.cal .c.r{background:var(--abs-soft);color:var(--abs)}
+.cal .c.u{background:#fff;box-shadow:inset 0 0 0 1.5px var(--line);color:var(--fg)}
+.cal .c.n{background:var(--neutral-soft);color:var(--neutral)}
+.cal .c.off{background:repeating-linear-gradient(-45deg,#EEF1EA 0 4px,#E1E7DA 4px 8px);color:var(--neutral);cursor:pointer}
+.cal .c.today{outline:2.5px solid var(--mark);outline-offset:1px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:8px;font-size:12px;color:var(--fg-muted)}
+.legend span{display:inline-flex;align-items:center;gap:4px}
+.legend em{display:inline-block;width:12px;height:12px;border-radius:4px}
+/* 관리자 폼 */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.form-grid .field + .field{margin-top:0}
+.form-grid .wide{grid-column:1 / -1}
+.daypick{display:flex;flex-wrap:wrap;gap:6px}
+.daypick label{display:inline-flex}
+.daypick input{position:absolute;opacity:0;pointer-events:none}
+.daypick span{min-width:44px;min-height:40px;display:grid;place-items:center;border:1.5px solid var(--line);border-radius:10px;font-weight:700;background:#fff;cursor:pointer}
+.daypick input:checked + span{background:var(--accent);border-color:var(--accent);color:#fff}
+.daypick input:focus-visible + span{outline:3px solid var(--mark)}
+.prog{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start;padding:12px 0;border-top:1px dashed var(--line)}
+.prog:first-child{border-top:0}
+.prog .nm{font-weight:700}
+.prog.off .nm{color:var(--fg-muted);text-decoration:line-through}
+.pin-big{font:30px var(--font-display);letter-spacing:.25em;color:var(--accent);text-align:center;background:var(--accent-pale);border-radius:14px;padding:12px;margin:8px 0}
+.readonly-note{display:flex;gap:8px;align-items:center}
 
 /* 하단 고정 바 */
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:40;background:rgba(255,255,255,.96);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom))}
@@ -130,7 +172,7 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .dock b{color:var(--abs)}
 
 /* 모달 */
-.scrim{position:fixed;inset:0;z-index:60;background:rgba(20,28,46,.45);display:flex;align-items:flex-end;justify-content:center}
+.scrim{position:fixed;inset:0;z-index:60;background:rgba(24,38,18,.45);display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--surface);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:20px 18px calc(18px + env(safe-area-inset-bottom))}
 @media (min-width:640px){.scrim{align-items:center}.sheet{border-radius:20px}}
 .sheet h2{font:23px var(--font-display);margin-bottom:10px}
@@ -149,7 +191,7 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .cls-opt{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;background:#fff;cursor:pointer}
 .cls-opt + .cls-opt{margin-top:8px}
 .cls-opt input{width:22px;height:22px;margin:2px 0 0;accent-color:var(--accent)}
-.cls-opt.on{border-color:var(--accent);background:#F6FAFF}
+.cls-opt.on{border-color:var(--accent);background:var(--accent-pale)}
 .cls-opt.dis{opacity:.5;cursor:not-allowed}
 .cls-opt .nm{font-weight:700}
 .cls-opt .meta{font-size:13.5px;color:var(--fg-muted)}
@@ -212,6 +254,8 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
   .cls-h{flex-direction:column}
   .counts{justify-content:flex-start}
   .steps div{font-size:12px}
+  .cal .c{min-height:30px;font-size:12px}
+  .prog{grid-template-columns:1fr}
 }
 @media (max-width:340px){.ros li{grid-template-columns:20px 1fr}.ros li .seg{grid-column:2}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -262,7 +306,7 @@ function busy(btn, on) { if (!btn) return; if (on) { btn.dataset.label = btn.inn
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M9 15l2 2 4-4"/></svg>';
 
 /* ───────── 상태 ───────── */
-const S = { pub: null, view: '', parent: null, pdata: null, kid: 'all', sel: new Set(), showPast: false, showCls: true, reg: { kid: '', grade: '', ban: '', phone: '', guardian: '', ids: new Set() },
+const S = { pub: null, view: '', parent: null, pdata: null, kid: 'all', sel: new Set(), calClosed: new Set(), showCls: true, reg: { kid: '', grade: '', ban: '', phone: '', guardian: '', ids: new Set() },
   pin: '', sdata: null, date: '', open: {}, tab: 'roster', timer: null };
 const PAGE = new URLSearchParams(location.search).get('page') || '';
 const app = $('#app');
@@ -293,7 +337,7 @@ function renderHome(msg) {
     '<label class="check" style="margin-top:12px"><input type="checkbox" name="remember" ' + (saved.name || !store.get('nb.parent.no') ? 'checked' : '') + '> 이 휴대폰에 기억하기 (다음엔 바로 열려요)</label>' +
     '<button class="btn primary block" style="margin-top:16px" type="submit">확인</button></form>' +
     '<div class="note" style="margin-top:14px"><b>따로 가입하지 않아도 돼요.</b> 수강 등록은 학교에서 해 드려요. 로그인이 안 되면 자녀 이름과 휴대폰 뒷번호를 확인해 주세요.</div>' +
-    '<div class="note" style="margin-top:14px">결석 신고는 <b>수업 시작 ' + (p.deadlineMin ? p.deadlineMin + '분 전' : '전') + '까지</b> 할 수 있어요.' + (p.phone ? ' 그 뒤에는 <a href="tel:' + esc(p.phone) + '">' + esc(p.phone) + '</a> 로 연락해 주세요.' : '') + '</div>' +
+    '<div class="note" style="margin-top:14px">결석 신고는 <b>' + esc(p.deadlineText || '수업 시작 전까지') + '</b> 할 수 있어요.' + (p.phone ? ' 그 뒤에는 <a href="tel:' + esc(p.phone) + '">' + esc(p.phone) + '</a> 로 연락해 주세요.' : '') + '</div>' +
     footer();
 }
 
@@ -318,7 +362,7 @@ function renderMy() {
   const multi = d.kids.length > 1;
   const kidOk = (n) => S.kid === 'all' || S.kid === n;
   const list = d.sessions.filter(s => kidOk(s.kid));
-  const up = list.filter(s => !s.past), past = list.filter(s => s.past).reverse();
+  const up = list.filter(s => !s.past || s.canReport); // 마감이 '종료 후 n분'이면 끝난 수업도 잠깐 신고 가능
   const byDay = {};
   up.forEach(s => { (byDay[s.date] = byDay[s.date] || []).push(s); });
   let h = header(d.kids.map(k => k.name).join(' · ') + ' 보호자님', '<button class="btn sm line" data-act="refresh" aria-label="새로고침">새로고침</button><button class="btn sm line" data-act="logout">나가기</button>');
@@ -330,15 +374,16 @@ function renderMy() {
       k.classes.map(c => {
         const t = c.tot || {};
         const sum = (t.p ? '<span class="badge ok">출석 ' + t.p + '</span>' : '') + (t.a ? '<span class="badge abs">결석 ' + t.a + '</span>' : '') + (t.rep ? '<span class="badge warn">결석 신고 ' + t.rep + '</span>' : '');
-        return '<div class="kid-cls"><div style="min-width:0"><b>' + esc(c.name) + '</b>' + (c.desc ? '<div class="xs" style="margin-top:2px">' + esc(c.desc) + '</div>' : '') +
+        return '<div class="kid-cls"><div class="row"><div style="min-width:0"><b>' + esc(c.name) + '</b>' + (c.desc ? '<div class="xs" style="margin-top:2px">' + esc(c.desc) + '</div>' : '') +
           '<div class="xs muted" style="margin-top:2px">' + (c.term ? esc(c.term) + ' · ' : '') + (c.start ? esc(c.days) + ' ' + esc(c.start) + '–' + esc(c.end) : '일정 추후 안내') + (c.place ? ' · ' + esc(c.place) : '') + (c.teacher ? ' · ' + esc(c.teacher) : '') + '</div>' +
           (c.from ? '<div class="xs muted">' + esc(c.from.replace(/-/g, '.')) + ' ~ ' + esc((c.to || '').replace(/-/g, '.')) + '</div>' : '') +
-          (sum ? '<div class="counts" style="justify-content:flex-start;margin-top:6px">' + sum + '</div>' : '') + '</div>' + statusBadge(c.status) + '</div>';
+          (sum ? '<div class="counts" style="justify-content:flex-start;margin-top:6px">' + sum + '</div>' : '') + '</div>' + statusBadge(c.status) + '</div>' +
+          (c.status === '수강' ? calHTML(c, today) : '') + '</div>';
       }).join('') + '</div>').join('');
   }
   // ② 수업 일정 · 결석 신고
   h += '<h2 class="sec-title">수업 일정 · 결석 신고</h2>';
-  h += '<p class="small muted">못 가는 수업의 <b style="color:var(--abs)">[결석]</b> 버튼을 누른 뒤 아래 <b>[결석 신청]</b>을 눌러 주세요. 여러 개를 한 번에 고를 수 있어요. 수업이 끝나면 선생님이 체크한 출결이 보여요.</p>';
+  h += '<p class="small muted">못 가는 수업의 <b style="color:var(--abs)">[결석]</b> 버튼을 누른 뒤 아래 <b>[결석 신청]</b>을 눌러 주세요. 여러 개를 한 번에 고를 수 있어요. 결석 신고는 <b>' + esc(d.deadlineText || '수업 시작 전까지') + '</b> 할 수 있어요. 지난 출결은 위 <b>수강 내역</b>의 달력에서 보세요.</p>';
   const days = Object.keys(byDay).sort();
   if (!days.length) h += '<div class="card empty" style="margin-top:14px">' + (d.kids.some(k => k.classes.some(c => !c.start)) ? '수업 일정이 아직 정해지지 않았어요. 일정이 나오면 여기에 보여요.' : '앞으로 예정된 수업이 없어요.') + '</div>';
   days.forEach(day => {
@@ -349,10 +394,6 @@ function renderMy() {
       (selectable.length > 1 ? '<button class="linkbtn small" data-act="pick-day" data-day="' + day + '">' + (allOn ? '선택 해제' : '이 날 모두 결석') + '</button>' : '') + '</div>' +
       ss.map(s => sesRow(s, multi && S.kid === 'all')).join('') + '</section>';
   });
-  if (past.length) {
-    h += '<button class="btn line block past-toggle" data-act="past">' + (S.showPast ? '지난 수업 출결 접기' : '지난 7일 출결 보기 (' + past.length + ')') + '</button>';
-    if (S.showPast) h += '<div style="margin-top:10px">' + past.map(s => sesRow(s, multi && S.kid === 'all', true)).join('') + '</div>';
-  }
   if (d.contact) h += '<div class="note" style="margin-top:16px">신고 마감이 지났거나, 수강 내역이 다르거나, 수업을 그만두려면 <a href="tel:' + esc(d.contact) + '">' + esc(d.contact) + '</a> 로 연락해 주세요.</div>';
   h += footer();
   app.className = 'wrap';
@@ -366,15 +407,50 @@ function sesRow(s, multi, isPast) {
   const on = S.sel.has(k);
   let act = '', rep = '';
   if (s.report) rep = '<div class="rep">결석 신청함 · ' + esc(s.reason) + (s.memo ? ' · ' + esc(s.memo) : '') + '</div>';
-  if (s.past || isPast) {
-    act = s.att === '출석' ? '<span class="badge ok">출석</span>' : s.att === '결석' ? '<span class="badge abs">결석</span>' : s.report ? '<span class="badge abs">결석 신청</span>' : '<span class="badge neutral">확인 전</span>';
-  } else if (s.canReport) {
+  if (s.canReport) {
     act = s.report ? '<span class="badge abs">결석 신청됨</span><button class="linkbtn xs" data-act="cancel" data-k="' + esc(k) + '">신청 취소</button>'
       : '<button class="pick" data-act="pick" data-k="' + esc(k) + '" aria-pressed="' + on + '">' + (on ? '✓ 결석' : '결석') + '</button>';
+  } else if (s.past || isPast) {
+    act = s.att === '출석' ? '<span class="badge ok">출석</span>' : s.att === '결석' ? '<span class="badge abs">결석</span>' : s.report ? '<span class="badge abs">결석 신청</span>' : '<span class="badge neutral">확인 전</span>';
   } else {
     act = s.att === '출석' ? '<span class="badge ok">출석</span>' : s.att === '결석' ? '<span class="badge abs">결석</span>' : s.report ? '<span class="badge abs">결석 신청됨</span>' : '<span class="badge neutral">수업 중 · 마감</span>';
   }
   return '<div class="ses' + (on ? ' sel' : '') + '"><div class="tm">' + esc(s.start) + '<small>' + esc(s.end) + '</small></div><div><div class="nm">' + esc(s.className) + '</div><div class="meta">' + (multi ? '<span class="kid">' + esc(s.kid) + '</span>' : '') + (isPast ? mdShort(s.date) + ' · ' : '') + esc(s.place || '') + '</div>' + rep + '</div><div class="act">' + act + '</div></div>';
+}
+/** 프로그램 운영 기간 전체를 달력으로: 출석 · 결석 · 결석 신고 · 예정 · 기록 없음 · 휴강 */
+const CAL = { p: ['출석', '출'], a: ['결석', '결'], r: ['결석 신고', '신고'], u: ['예정', ''], n: ['출결 기록 없음', '·'] };
+function calHTML(c, today) {
+  if (!c.cal) return c.start ? '' : '<div class="xs muted" style="margin-top:8px">수업 일정이 정해지면 출결 달력이 보여요.</div>';
+  const closed = S.calClosed.has(c.eid);
+  const n = { p: 0, a: 0, r: 0, u: 0, n: 0 };
+  c.cal.forEach(x => { n[x.s]++; });
+  let h = '<div class="cal-wrap"><div class="cal-top"><b>출결 달력</b><span class="xs muted">전체 ' + c.cal.length + '회 · 출석 ' + n.p + ' · 결석 ' + n.a + (n.r ? ' · 신고 ' + n.r : '') + '</span><button class="linkbtn xs" data-act="cal-tog" data-eid="' + esc(c.eid) + '">' + (closed ? '펼치기' : '접기') + '</button></div>';
+  if (closed) return h + '</div>';
+  const byDay = {}; c.cal.forEach(x => { byDay[x.d] = x; });
+  const offDay = {}; (c.offs || []).forEach(o => { offDay[o.d] = o; });
+  // 운영 시작 달 ~ 종료 달
+  const first = (c.cal[0] || {}).d || c.from, last = (c.cal[c.cal.length - 1] || {}).d || c.to;
+  let y = +first.slice(0, 4), m = +first.slice(5, 7);
+  const ly = +last.slice(0, 4), lm = +last.slice(5, 7);
+  for (let guard = 0; guard < 8 && (y < ly || (y === ly && m <= lm)); guard++) {
+    const pad = (v) => (v < 10 ? '0' : '') + v;
+    const dim = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const lead = new Date(Date.UTC(y, m - 1, 1)).getUTCDay();
+    h += '<div class="cal-month"><div class="cal-mh">' + y + '년 ' + m + '월</div><div class="cal" role="grid">' + DOW.split('').map((w, i) => '<div class="dw' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '') + '">' + w + '</div>').join('');
+    for (let i = 0; i < lead; i++) h += '<div></div>';
+    for (let dd = 1; dd <= dim; dd++) {
+      const ymd = y + '-' + pad(m) + '-' + pad(dd);
+      const x = byDay[ymd], o = offDay[ymd];
+      const td = ymd === today ? ' today' : '';
+      if (x) { const lab = CAL[x.s]; const tip = mdShort(ymd) + ' ' + c.start + ' · ' + lab[0] + (x.why ? ' (' + x.why + ')' : ''); h += '<button class="c s ' + x.s + td + '" data-act="calday" data-t="' + esc(tip) + '" aria-label="' + esc(tip) + '">' + dd + (lab[1] ? '<i>' + lab[1] + '</i>' : '') + '</button>'; }
+      else if (o) { const tip = mdShort(ymd) + ' 휴강 · ' + o.why; h += '<button class="c off' + td + '" data-act="calday" data-t="' + esc(tip) + '" aria-label="' + esc(tip) + '">' + dd + '<i>휴강</i></button>'; }
+      else h += '<div class="c' + td + '">' + dd + '</div>';
+    }
+    h += '</div></div>';
+    m++; if (m > 12) { m = 1; y++; }
+  }
+  h += '<div class="legend"><span><em style="background:var(--ok-soft)"></em>출석</span><span><em style="background:var(--abs)"></em>결석</span><span><em style="background:var(--abs-soft)"></em>결석 신고</span><span><em style="background:#fff;box-shadow:inset 0 0 0 1.5px var(--line)"></em>예정</span><span><em style="background:var(--neutral-soft)"></em>기록 없음</span><span><em style="background:repeating-linear-gradient(-45deg,#EEF1EA 0 3px,#E1E7DA 3px 6px)"></em>휴강</span></div>';
+  return h + '</div>';
 }
 function renderDock() {
   let el = $('#dock');
@@ -512,7 +588,7 @@ function renderPin(msg) {
   S.view = 'pin';
   app.className = 'wrap';
   app.innerHTML = header(IS_ADMIN ? '관리자' : '강사용 출석부') +
-    '<form class="card" id="pinForm" style="margin-top:12px"><h2 style="font:22px var(--font-display);margin-bottom:6px">' + (IS_ADMIN ? '관리자 PIN' : '강사 PIN') + '</h2><p class="small muted" style="margin-bottom:14px">' + (IS_ADMIN ? '설정 탭의 관리자 PIN 을 입력하세요.' : '학교에서 받은 수업 PIN 을 입력하세요.') + '</p>' +
+    '<form class="card" id="pinForm" style="margin-top:12px"><h2 style="font:22px var(--font-display);margin-bottom:6px">' + (IS_ADMIN ? '관리자 PIN' : '강사 PIN') + '</h2><p class="small muted" style="margin-bottom:14px">' + (IS_ADMIN ? '설정 탭의 관리자 PIN 을 입력하세요.' : '관리자에게 받은 강사 PIN 을 입력하세요.') + '</p>' +
     (msg ? '<div class="note warn" style="margin-bottom:12px">' + esc(msg) + '</div>' : '') +
     '<input class="input pinbox" name="pin" inputmode="numeric" autocomplete="off" maxlength="8" required autofocus aria-label="PIN">' +
     '<label class="check" style="margin-top:12px"><input type="checkbox" name="remember" checked> 이 기기에서 기억하기</label>' +
@@ -527,7 +603,7 @@ async function loadStaff(btn, quiet) {
     renderStaff();
   } catch (e) {
     busy(btn, false);
-    if (/PIN/.test(e.message)) { store.del(PIN_KEY); S.pin = ''; renderPin(e.message); }
+    if (/PIN|중지/.test(e.message)) { store.del(PIN_KEY); S.pin = ''; renderPin(e.message); }
     else if (!quiet) toast(e.message, true);
   }
 }
@@ -542,9 +618,17 @@ function renderStaff() {
   const admin = d.role === 'admin';
   const on = d.classes.filter(c => c.session), offc = d.classes.filter(c => !c.session);
   let h = header((admin ? '관리자' : esc(d.teacher) + ' 선생님') + (d.school ? ' · ' + d.school : ''), '<button class="btn sm line" data-act="s-refresh">새로고침</button><button class="btn sm line" data-act="s-logout">나가기</button>');
-  if (admin) h += '<div class="tabs" role="tablist">' + [['roster', '출석부'], ['reg', '수강 등록'], ['list', '수강생 명단 ' + new Set(d.enrollments.filter(e => e.status === '수강').map(e => e.kid + e.phone)).size + '명'], ['pins', '강사 PIN']].concat(d.pending.length ? [['pending', '승인 대기 ' + d.pending.length]] : []).map(t => '<button class="chip" role="tab" data-act="tab" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + '</button>').join('') + '</div>';
-  if (admin && S.tab === 'pending') { h += pendingHTML(d); app.className = 'wrap wide'; app.innerHTML = h; return; }
-  if (admin && S.tab === 'pins') { h += pinsHTML(d); app.className = 'wrap wide'; app.innerHTML = h; return; }
+  // 강사: 출석부 · 수강생 명단(보기 전용) / 관리자: + 수강 등록 · 프로그램 · 강사 관리 · 설정
+  const tabs = admin ? [['roster', '출석부'], ['reg', '수강 등록'], ['list', '수강생 명단 ' + new Set(d.enrollments.filter(e => e.status === '수강').map(e => e.kid + e.phone)).size + '명'], ['prog', '프로그램'], ['tch', '강사 관리'], ['set', '설정']].concat(d.pending.length ? [['pending', '승인 대기 ' + d.pending.length]] : [])
+    : [['roster', '출석부'], ['stu', '수강생 명단']];
+  if (!tabs.some(t => t[0] === S.tab)) S.tab = 'roster';
+  h += '<div class="tabs" role="tablist">' + tabs.map(t => '<button class="chip" role="tab" data-act="tab" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + '</button>').join('') + '</div>';
+  const only = (html, after) => { app.className = 'wrap wide'; app.innerHTML = h + html; if (after) after(); };
+  if (!admin && S.tab === 'stu') return only(studentsHTML(d));
+  if (admin && S.tab === 'pending') return only(pendingHTML(d));
+  if (admin && S.tab === 'prog') return only(progHTML(d));
+  if (admin && S.tab === 'tch') return only(tchHTML(d));
+  if (admin && S.tab === 'set') return only(setHTML(d));
   if (admin && S.tab === 'reg') { h += regFormHTML(); app.className = 'wrap wide'; app.innerHTML = h; renderClsList(); return; }
   if (admin && S.tab === 'list') { h += enrollHTML(d); app.className = 'wrap wide'; app.innerHTML = h; renderEnrList(); return; }
   h += '<div class="datebar" style="margin-top:12px"><button class="btn sm line" data-act="day" data-n="-1" aria-label="전날">◀</button><div class="d">' + md(d.date) + (d.date === today ? '<small>오늘</small>' : '') + '</div><button class="btn sm line" data-act="day" data-n="1" aria-label="다음 날">▶</button>' +
@@ -588,10 +672,88 @@ function pendingHTML(d) {
   return '<div class="card" style="margin-top:14px;overflow:auto"><table class="tbl"><thead><tr><th>등록</th><th>학생</th><th>보호자</th><th>수업</th><th></th></tr></thead><tbody>' +
     d.pending.map(p => '<tr><td class="xs">' + esc(String(p.at).slice(5, 16)) + '</td><td><b>' + esc(p.kid) + '</b><br><span class="xs muted">' + p.grade + '학년 ' + esc(p.ban) + (p.ban ? '반' : '') + '</span></td><td class="small">' + esc(p.phone) + '<br>' + esc(p.guardian) + '</td><td>' + esc(p.className) + '</td><td style="white-space:nowrap"><button class="btn ok sm" data-act="approve" data-eid="' + esc(p.eid) + '" data-st="수강">승인</button> <button class="btn line sm" data-act="approve" data-eid="' + esc(p.eid) + '" data-st="거절">거절</button></td></tr>').join('') + '</tbody></table></div>';
 }
-function pinsHTML(d) {
+/* 강사: 내 프로그램 수강생 명단 (보기 전용) */
+function studentsHTML(d) {
+  if (!d.classes.length) return '<div class="card empty" style="margin-top:14px">맡은 프로그램이 없어요. 관리자에게 문의해 주세요.</div>';
+  return '<div class="note readonly-note" style="margin-top:14px">👀 <span>수강생 명단은 <b>보기만</b> 할 수 있어요. 학생 추가·삭제나 수강 변경은 관리자에게 요청해 주세요.</span></div>' +
+    d.classes.map(c => '<section class="card cls"><div class="cls-h"><div><h3>' + esc(c.name) + '</h3><div class="meta">' + (c.term ? esc(c.term) + ' · ' : '') + (c.start ? esc(c.days) + ' ' + esc(c.start) + '–' + esc(c.end) : '일정 추후 안내') + (c.place ? ' · ' + esc(c.place) : '') + (c.from ? ' · ' + esc(c.from.replace(/-/g, '.')) + '~' + esc((c.to || '').replace(/-/g, '.')) : '') + '</div></div><div class="counts"><span class="badge info">' + c.students.length + '명</span>' + (c.sessionsTotal ? '<span class="badge neutral">전체 ' + c.sessionsTotal + '회</span>' : '') + '</div></div>' +
+      '<div class="cls-b" style="overflow:auto">' + (c.students.length ? '<table class="tbl"><thead><tr><th>#</th><th>이름</th><th>학년·반</th>' + (c.students.some(x => x.phone) ? '<th>보호자</th>' : '') + '<th>출석</th><th>결석</th><th>결석 신고</th></tr></thead><tbody>' +
+        c.students.map((x, i) => '<tr><td class="xs muted">' + (i + 1) + '</td><td><b>' + esc(x.kid) + '</b></td><td class="small">' + x.grade + '학년' + (x.ban ? ' ' + esc(x.ban) + '반' : '') + '</td>' + (c.students.some(y => y.phone) ? '<td class="small">' + (x.phone ? '<a href="tel:' + esc(x.phone) + '">' + esc(x.phone) + '</a>' : '') + '</td>' : '') + '<td>' + (x.tot.p || 0) + '</td><td' + (x.tot.a ? ' style="color:var(--abs);font-weight:700"' : '') + '>' + (x.tot.a || 0) + '</td><td>' + (x.tot.rep || 0) + '</td></tr>').join('') + '</tbody></table>' : '<div class="empty small">수강생이 없어요.</div>') + '</div></section>').join('');
+}
+
+/* 관리자: 프로그램 (일정·내용 수정) + 휴강일 */
+const WK = [[1, '월'], [2, '화'], [3, '수'], [4, '목'], [5, '금'], [6, '토'], [0, '일']];
+function progHTML(d) {
+  const ps = d.programs.slice().sort((a, b) => (b.use - a.use) || String(a.term).localeCompare(String(b.term), 'ko') || a.name.localeCompare(b.name, 'ko'));
+  let lastTerm = null;
+  let h = '<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b>프로그램 ' + ps.filter(p => p.use).length + '개</b><button class="btn primary sm" data-act="prog-edit" data-id="">＋ 새 프로그램</button></div>' +
+    '<p class="xs muted" style="margin:6px 0 4px">이름 · 강사 · 요일 · 시간 · 기간 · 장소 · 대상 학년 · 정원 · 주요 내용을 여기서 고칠 수 있어요. 고치면 학부모·강사 화면에 바로 반영돼요.</p>';
+  h += ps.map(p => {
+    const th = (p.term || '') !== lastTerm ? (lastTerm = p.term || '', '<div class="term-h">' + esc(p.term || '운영 구분 없음') + '</div>') : '';
+    return th + '<div class="prog' + (p.use ? '' : ' off') + '"><div><div class="nm">' + esc(p.name) + (p.use ? '' : ' <span class="badge neutral">숨김</span>') + '</div>' + (p.desc ? '<div class="xs">' + esc(p.desc) + '</div>' : '') +
+      '<div class="xs muted">' + (p.start ? esc(p.daysText) + ' ' + esc(p.start) + '–' + esc(p.end) : '<span class="tbd">일정 미정</span>') + ' · ' + (p.teacher ? esc(p.teacher) : '<span class="tbd">강사 미정</span>') + (p.place ? ' · ' + esc(p.place) : '') + ' · ' + esc(gradeLabel(p.grade)) + ' · ' + p.count + (p.cap ? '/' + p.cap : '') + '명' + (p.from ? ' · ' + esc(p.from.replace(/-/g, '.')) + '~' + esc((p.to || '').replace(/-/g, '.')) : '') + '</div></div>' +
+      '<button class="btn line sm" data-act="prog-edit" data-id="' + esc(p.id) + '">수정</button></div>';
+  }).join('');
+  h += '</div>';
+  // 휴강일
+  const opts = '<option value="">모든 수업</option>' + d.programs.filter(p => p.use).map(p => '<option value="' + esc(p.id) + '">' + esc(p.name) + '</option>').join('');
+  h += '<div class="card" style="margin-top:14px"><b>휴강일</b><p class="xs muted" style="margin:4px 0 10px">휴강일에는 학부모 일정·출결 달력과 강사 출석부에서 그 날 수업이 빠져요.</p>' +
+    '<form id="offForm" class="form-grid"><label class="field"><span>날짜</span><input class="input" type="date" name="date" required></label><label class="field"><span>프로그램</span><select class="input" name="cls">' + opts + '</select></label><label class="field"><span>사유</span><input class="input" name="reason" maxlength="40" placeholder="예: 설 연휴"></label><div class="field" style="align-self:end"><button class="btn primary block" type="submit">휴강일 추가</button></div></form>' +
+    (d.offs.length ? '<table class="tbl" style="margin-top:12px"><tbody>' + d.offs.map(o => '<tr><td><b>' + mdShort(o.date) + '</b></td><td class="small">' + esc(o.className) + '</td><td class="small">' + esc(o.reason) + '</td><td style="text-align:right"><button class="btn line sm" data-act="off-del" data-date="' + esc(o.date) + '" data-cls="' + esc(o.cls) + '">삭제</button></td></tr>').join('') + '</tbody></table>' : '<div class="empty small">등록된 휴강일이 없어요.</div>') + '</div>';
+  return h;
+}
+function openProg(id) {
+  const d = S.sdata;
+  const p = d.programs.find(x => x.id === id) || { id: '', name: '', teacher: '', days: [], start: '', end: '', place: '', grade: '1~6학년', cap: '', from: '', to: '', use: true, term: (d.programs[0] || {}).term || '', desc: '' };
+  const names = d.teachers.filter(t => t.use || t.name === p.teacher).map(t => t.name);
+  if (p.teacher && names.indexOf(p.teacher) < 0) names.unshift(p.teacher);
+  modal('<h2>' + (id ? '프로그램 수정' : '새 프로그램') + '</h2><form id="progForm" data-id="' + esc(p.id) + '" class="form-grid">' +
+    '<label class="field wide"><span>프로그램 이름</span><input class="input" name="name" required maxlength="40" value="' + esc(p.name) + '"></label>' +
+    '<label class="field"><span>운영 구분 <em>(예: 2026 겨울방학)</em></span><input class="input" name="term" maxlength="30" value="' + esc(p.term) + '"></label>' +
+    '<label class="field"><span>강사</span><select class="input" name="teacher"><option value="">(미정)</option>' + names.map(n => '<option' + (n === p.teacher ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label>' +
+    '<label class="field wide"><span>주요 내용</span><textarea class="input" name="desc" maxlength="200">' + esc(p.desc) + '</textarea></label>' +
+    '<div class="field wide"><span>요일</span><div class="daypick">' + WK.map(w => '<label><input type="checkbox" name="days" value="' + w[0] + '"' + (p.days.indexOf(w[0]) >= 0 ? ' checked' : '') + '><span>' + w[1] + '</span></label>').join('') + '</div></div>' +
+    '<label class="field"><span>시작 시간</span><input class="input" type="time" name="start" value="' + esc(p.start) + '"></label>' +
+    '<label class="field"><span>끝 시간</span><input class="input" type="time" name="end" value="' + esc(p.end) + '"></label>' +
+    '<label class="field"><span>운영 시작일</span><input class="input" type="date" name="from" value="' + esc(p.from) + '"></label>' +
+    '<label class="field"><span>운영 종료일</span><input class="input" type="date" name="to" value="' + esc(p.to) + '"></label>' +
+    '<label class="field"><span>장소</span><input class="input" name="place" maxlength="30" value="' + esc(p.place) + '"></label>' +
+    '<label class="field"><span>대상 학년</span><input class="input" name="grade" maxlength="20" value="' + esc(p.grade) + '" placeholder="1~6학년"></label>' +
+    '<label class="field"><span>정원 <em>(빈칸 = 제한 없음)</em></span><input class="input" type="number" min="0" name="cap" value="' + esc(p.cap || '') + '"></label>' +
+    '<label class="check wide" style="align-self:center"><input type="checkbox" name="use"' + (p.use ? ' checked' : '') + '> 사용 (끄면 수강 등록·학부모 화면·출석부에서 숨김)</label>' +
+    '<div class="sheet-act wide"><button class="btn line" type="button" data-act="close">닫기</button><button class="btn primary" type="submit">저장</button></div></form>');
+}
+async function saveProg(f) {
+  const fd = new FormData(f);
+  const p = { id: f.dataset.id, name: fd.get('name'), term: fd.get('term'), teacher: fd.get('teacher'), desc: fd.get('desc'), days: fd.getAll('days').map(Number), start: fd.get('start'), end: fd.get('end'), from: fd.get('from'), to: fd.get('to'), place: fd.get('place'), grade: fd.get('grade'), cap: fd.get('cap'), use: !!fd.get('use') };
+  const btn = f.querySelector('[type=submit]'); busy(btn, true);
+  try { const r = await rpc('saveClass', S.pin, p); modal(''); toast(r.warn || '저장했어요.', !!r.warn); await loadStaff(null, true); }
+  catch (e) { busy(btn, false); toast(e.message, true); }
+}
+
+/* 관리자: 강사 관리 (등록 · 수정 · PIN · 삭제) */
+function tchHTML(d) {
   const url = location.origin + location.pathname + '?page=t';
-  return '<div class="card" style="margin-top:14px"><p class="small">강사 접속 주소: <b>' + esc(url) + '</b></p><p class="xs muted" style="margin-top:4px">PIN 은 시트 [수업] 탭 L열에서 바꿀 수 있어요. 같은 강사 이름은 같은 PIN 을 씁니다.</p>' +
-    '<table class="tbl" style="margin-top:10px"><thead><tr><th>강사</th><th>PIN</th><th>수업</th></tr></thead><tbody>' + d.teachers.map(t => '<tr><td><b>' + esc(t.teacher || '(이름 없음)') + '</b></td><td class="mono">' + esc(t.pin || '없음') + '</td><td class="small">' + t.classes.map(esc).join(', ') + '</td></tr>').join('') + '</tbody></table></div>';
+  let h = '<div class="card" style="margin-top:14px"><b>강사 등록</b><p class="xs muted" style="margin:4px 0 10px">등록하면 4자리 PIN 이 만들어져요. 강사는 <b>' + esc(url) + '</b> 에서 PIN 으로 들어가 <b>맡은 프로그램만</b> 출석부·출결 체크·수강생 명단(보기)을 쓸 수 있어요. 프로그램을 맡기려면 [프로그램] 탭에서 강사를 고르세요.</p>' +
+    '<form id="tchForm" class="form-grid"><label class="field"><span>강사 이름</span><input class="input" name="name" required maxlength="20" placeholder="예: 김민지"></label><label class="field"><span>연락처 <em>(선택)</em></span><input class="input" name="phone" maxlength="20" inputmode="tel" data-phone></label><div class="field" style="align-self:end"><button class="btn primary block" type="submit">강사 등록</button></div></form></div>';
+  if (d.unassigned && d.unassigned.length) h += '<div class="note warn" style="margin-top:14px">강사 목록에 없는 이름이 프로그램에 적혀 있어요: ' + d.unassigned.map(esc).join(', ') + '. 그 이름으로 강사를 등록하면 PIN 으로 들어갈 수 있어요.</div>';
+  h += '<div class="card" style="margin-top:14px;overflow:auto"><b>강사 ' + d.teachers.length + '명</b>' + (d.teachers.length ? '<table class="tbl" style="margin-top:8px"><thead><tr><th>이름</th><th>PIN</th><th>연락처</th><th>맡은 프로그램</th><th></th></tr></thead><tbody>' +
+    d.teachers.map(t => '<tr' + (t.use ? '' : ' style="opacity:.55"') + '><td><b>' + esc(t.name) + '</b>' + (t.use ? '' : '<br><span class="badge neutral">사용 중지</span>') + '</td><td style="font:600 17px var(--font-body);letter-spacing:.08em">' + esc(t.pin) + '</td><td class="small">' + esc(t.phone) + '</td><td class="small">' + (t.classes.length ? t.classes.map(esc).join(', ') : '<span class="muted">없음</span>') + '</td><td style="white-space:nowrap;text-align:right"><button class="btn line sm" data-act="tch-edit" data-n="' + esc(t.name) + '">수정</button> <button class="btn line sm" data-act="tch-pin" data-n="' + esc(t.name) + '">PIN 새로</button> <button class="btn line sm" data-act="tch-del" data-n="' + esc(t.name) + '"' + (t.classes.length ? ' disabled title="맡은 프로그램이 있으면 삭제할 수 없어요"' : '') + '>삭제</button></td></tr>').join('') + '</tbody></table>' : '<div class="empty small">등록된 강사가 없어요.</div>') + '</div>';
+  return h;
+}
+function openTch(name) {
+  const t = S.sdata.teachers.find(x => x.name === name); if (!t) return;
+  modal('<h2>강사 수정</h2><form id="tchEdit" data-old="' + esc(t.name) + '" class="form-grid"><label class="field"><span>이름 <em>(바꾸면 맡은 프로그램도 같이 바뀜)</em></span><input class="input" name="name" required maxlength="20" value="' + esc(t.name) + '"></label><label class="field"><span>연락처</span><input class="input" name="phone" maxlength="20" value="' + esc(t.phone) + '" data-phone></label>' +
+    '<label class="check wide"><input type="checkbox" name="use"' + (t.use ? ' checked' : '') + '> 사용 (끄면 이 강사 PIN 으로 들어갈 수 없음)</label><div class="sheet-act wide"><button class="btn line" type="button" data-act="close">닫기</button><button class="btn primary" type="submit">저장</button></div></form>');
+}
+function pinModal(title, r) { modal('<h2>' + esc(title) + '</h2><p><b>' + esc(r.name) + '</b> 강사의 PIN 이에요. 강사에게 알려 주세요.</p><div class="pin-big">' + esc(r.pin) + '</div><p class="xs muted">강사 접속 주소: ' + esc(location.origin + location.pathname + '?page=t') + '</p><div class="sheet-act"><button class="btn primary" data-act="close" autofocus>확인</button></div>'); }
+
+/* 관리자: 설정 (결석 신고 마감) */
+function setHTML(d) {
+  const help = { '시작 30분 전': '수업 시작 30분 전까지', '시작 10분 전': '수업 시작 10분 전까지', '시작 시각': '수업 시작 전까지 (기본)', '시작 후 10분': '수업 시작하고 10분 뒤까지 — 지각·결석 연락을 늦게 받을 때', '종료 시각': '수업이 끝날 때까지', '종료 후 10분': '수업이 끝나고 10분 뒤까지' };
+  return '<div class="card" style="margin-top:14px"><b>학부모 결석 신고 마감</b><p class="xs muted" style="margin:4px 0 12px">학부모가 언제까지 결석 신고(·취소)를 할 수 있는지 정해요. 강사가 이미 <b>출석</b>으로 체크한 수업은 마감 전이라도 신고할 수 없어요.</p>' +
+    '<form id="setForm" class="stack">' + d.deadlineOptions.map(o => '<label class="check"><input type="radio" name="dl" value="' + esc(o) + '"' + (o === d.deadline ? ' checked' : '') + '> <span><b>' + esc(o) + '</b> <span class="muted small">· ' + esc(help[o] || '') + '</span></span></label>').join('') +
+    '<button class="btn primary" type="submit" style="margin-top:6px">저장</button></form></div>';
 }
 function findStu(eid) { for (const c of S.sdata.classes) { const s = c.roster.find(x => x.eid === eid); if (s) return { c: c, s: s }; } return null; }
 async function mark(btn) {
@@ -627,7 +789,8 @@ document.addEventListener('click', async (ev) => {
     case 'logout': store.del('nb.parent'); S.parent = null; S.pdata = null; S.sel.clear(); renderDock(); renderHome(); break;
     case 'refresh': refreshMy(t); break;
     case 'kid': S.kid = t.dataset.kid; S.sel.clear(); renderMy(); break;
-    case 'past': S.showPast = !S.showPast; renderMy(); break;
+    case 'cal-tog': S.calClosed.has(t.dataset.eid) ? S.calClosed.delete(t.dataset.eid) : S.calClosed.add(t.dataset.eid); renderMy(); break;
+    case 'calday': toast(t.dataset.t); break;
     case 'cls-tog': S.showCls = !S.showCls; renderMy(); break;
     case 'pick': { const k = t.dataset.k; S.sel.has(k) ? S.sel.delete(k) : S.sel.add(k); renderMy(); break; }
     case 'pick-day': {
@@ -650,9 +813,14 @@ document.addEventListener('click', async (ev) => {
     case 'today': S.date = ''; loadStaff(t); break;
     case 'goto': S.date = t.dataset.d; loadStaff(t); break;
     case 'toggle': S.open[t.dataset.id] = !S.open[t.dataset.id]; renderStaff(); break;
-    case 'tab': S.tab = t.dataset.tab; renderStaff(); break;
+    case 'tab': S.tab = t.dataset.tab; $('#toast').classList.add('hidden'); renderStaff(); window.scrollTo(0, 0); break;
     case 'mark': mark(t); break;
     case 'bulk': bulk(t); break;
+    case 'prog-edit': openProg(t.dataset.id); break;
+    case 'off-del': busy(t, true); try { await rpc('saveOff', S.pin, t.dataset.date, t.dataset.cls, '', false); toast('휴강일을 지웠어요.'); await loadStaff(null, true); } catch (e) { busy(t, false); toast(e.message, true); } break;
+    case 'tch-edit': openTch(t.dataset.n); break;
+    case 'tch-pin': busy(t, true); try { const r = await rpc('resetTeacherPin', S.pin, t.dataset.n); await loadStaff(null, true); pinModal('새 PIN', r); } catch (e) { busy(t, false); toast(e.message, true); } break;
+    case 'tch-del': busy(t, true); try { await rpc('deleteTeacher', S.pin, t.dataset.n); toast('강사를 삭제했어요.'); await loadStaff(null, true); } catch (e) { busy(t, false); toast(e.message, true); } break;
     case 'approve': busy(t, true); try { await rpc('setEnrollStatus', S.pin, t.dataset.eid, t.dataset.st); toast(t.dataset.st === '수강' ? '승인했어요.' : '거절했어요.'); await loadStaff(null); } catch (e) { busy(t, false); toast(e.message, true); } break;
   }
 });
@@ -673,6 +841,11 @@ document.addEventListener('submit', async (ev) => {
     catch (e) { busy(btn, false); toast(e.message, true); }
   }
   if (f.id === 'regForm') submitReg(f);
+  if (f.id === 'progForm') saveProg(f);
+  if (f.id === 'offForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { await rpc('saveOff', S.pin, fd.get('date'), fd.get('cls'), fd.get('reason'), true); toast('휴강일을 추가했어요.'); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
+  if (f.id === 'tchForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { const r = await rpc('saveTeacher', S.pin, { name: fd.get('name'), phone: fd.get('phone') }); await loadStaff(null, true); pinModal('강사 등록 완료', r); } catch (e) { busy(btn, false); toast(e.message, true); } }
+  if (f.id === 'tchEdit') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { await rpc('saveTeacher', S.pin, { oldName: f.dataset.old, name: fd.get('name'), phone: fd.get('phone'), use: !!fd.get('use') }); modal(''); toast('저장했어요.'); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
+  if (f.id === 'setForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { const r = await rpc('setDeadline', S.pin, fd.get('dl')); toast('저장했어요. 학부모 화면: 결석 신고는 ' + r.text + ' 할 수 있어요.'); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
   if (f.id === 'pinForm') {
     const fd = new FormData(f); S.pin = String(fd.get('pin')).trim();
     if (fd.get('remember')) store.set(PIN_KEY, S.pin);
