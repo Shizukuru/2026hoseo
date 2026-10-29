@@ -117,7 +117,7 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .ses .meta .kid{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:0 6px;font-weight:600;margin-right:4px}
 .ses .rep{font-size:13px;color:var(--abs);margin-top:4px}
 .ses .act{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-.pick{min-height:44px;min-width:92px;border-radius:12px;border:1.5px solid var(--abs);background:#fff;color:var(--abs);font-weight:700;padding:0 12px}
+.pick{min-height:44px;min-width:110px;white-space:nowrap;border-radius:12px;border:1.5px solid var(--abs);background:#fff;color:var(--abs);font-weight:700;padding:0 12px}
 .pick[aria-pressed="true"]{background:var(--abs);color:#fff}
 .past-toggle{margin-top:22px}
 .kid-cls{display:block;padding:12px 0;border-top:1px dashed var(--line);font-size:14.5px}
@@ -357,8 +357,8 @@ function renderHome(msg) {
   const saved = store.get('nb.parent') || {};
   app.className = 'wrap';
   app.innerHTML = header() +
-    '<section class="hero"><h1>우리 아이 수업과 출결,<br>여기서 확인하세요</h1><p>못 가는 날은 결석 신고만 하면 강사 선생님 출석부에 바로 표시돼요. 전화하지 않아도 돼요.</p>' +
-    '<div class="steps"><div><b>1</b>자녀 이름 ·<br>휴대폰 뒷번호</div><div><b>2</b>수강 내역 ·<br>출결 확인</div><div><b>3</b>못 가는 날<br>결석 신고</div></div></section>' +
+    '<section class="hero"><h1>우리 아이 수업과 출결,<br>여기서 확인하세요</h1><p>못 가는 날은 결석 신청만 하면 강사 선생님 출석부에 바로 표시돼요. 전화하지 않아도 돼요.</p>' +
+    '<div class="steps"><div><b>1</b>자녀 이름 ·<br>휴대폰 뒷번호</div><div><b>2</b>수강 내역 ·<br>출결 확인</div><div><b>3</b>못 가는 날<br>결석 신청</div></div></section>' +
     '<form class="card" id="loginForm" autocomplete="on"><h2 style="font:21px var(--font-display);margin-bottom:12px">우리 아이 수업 보기</h2>' +
     (msg ? '<div class="note warn" style="margin-bottom:12px">' + esc(msg) + '</div>' : '') +
     '<label class="field"><span>자녀 이름</span><input class="input" name="kid" required maxlength="20" value="' + esc(saved.name || '') + '" placeholder="예: 김하나" autocomplete="off"></label>' +
@@ -366,7 +366,7 @@ function renderHome(msg) {
     '<label class="check" style="margin-top:12px"><input type="checkbox" name="remember" ' + (saved.name || !store.get('nb.parent.no') ? 'checked' : '') + '> 이 휴대폰에 기억하기 (다음엔 바로 열려요)</label>' +
     '<button class="btn primary block" style="margin-top:16px" type="submit">확인</button></form>' +
     '<div class="note" style="margin-top:14px"><b>따로 가입하지 않아도 돼요.</b> 수강 등록은 학교에서 해 드려요. 로그인이 안 되면 자녀 이름과 휴대폰 뒷번호를 확인해 주세요.</div>' +
-    '<div class="note" style="margin-top:14px">결석 신고는 <b>' + esc(p.deadlineText || '수업 시작 전까지') + '</b> 할 수 있어요.' + (p.phone ? ' 그 뒤에는 <a href="tel:' + esc(p.phone) + '">' + esc(p.phone) + '</a> 로 연락해 주세요.' : '') + '</div>' +
+    '<div class="note" style="margin-top:14px">결석 신청은 <b>' + esc(p.deadlineText || '수업 시작 전까지') + '</b> 할 수 있어요.' + (p.phone ? ' 그 뒤에는 <a href="tel:' + esc(p.phone) + '">' + esc(p.phone) + '</a> 로 연락해 주세요.' : '') + '</div>' +
     footer();
 }
 
@@ -402,7 +402,7 @@ function renderMy() {
     h += d.kids.filter(k => kidOk(k.name)).map(k => '<div class="card kid-card"><div class="kid-h"><b>' + esc(k.name) + '</b> <span class="small muted">' + k.grade + '학년' + (k.ban ? ' ' + esc(k.ban) + '반' : '') + ' · ' + k.classes.length + '개 수업</span></div>' +
       k.classes.map(c => {
         const t = c.tot || {};
-        const sum = (t.p ? '<span class="badge ok">출석 ' + t.p + '</span>' : '') + (t.a ? '<span class="badge abs">결석 ' + t.a + '</span>' : '') + (t.rep ? '<span class="badge warn">결석 신고 ' + t.rep + '</span>' : '');
+        const sum = (t.p ? '<span class="badge ok">출석 ' + t.p + '</span>' : '') + (t.a ? '<span class="badge abs">결석 ' + t.a + '</span>' : '') + (t.rep ? '<span class="badge warn">결석 신청 ' + t.rep + '</span>' : '');
         return '<div class="kid-cls"><div class="row"><div style="min-width:0"><b>' + esc(c.name) + '</b>' + (c.type ? tbadges(c.type) : '') + (c.desc ? '<div class="xs" style="margin-top:2px">' + esc(c.desc) + '</div>' : '') +
           '<div class="xs muted" style="margin-top:2px">' + (c.term ? esc(c.term) + ' · ' : '') + (c.start ? esc(c.days) + ' ' + esc(c.start) + '–' + esc(c.end) : '일정 추후 안내') + (c.place ? ' · ' + esc(c.place) : '') + (c.teacher ? ' · ' + esc(c.teacher) : '') + '</div>' +
           (c.from ? '<div class="xs muted">' + esc(c.from.replace(/-/g, '.')) + ' ~ ' + esc((c.to || '').replace(/-/g, '.')) + '</div>' : '') +
@@ -411,8 +411,8 @@ function renderMy() {
       }).join('') + '</div>').join('');
   }
   // ② 수업 일정 · 결석 신고
-  h += '<h2 class="sec-title">수업 일정 · 결석 신고</h2>';
-  h += '<p class="small muted">못 가는 수업의 <b style="color:var(--abs)">[결석]</b> 버튼을 누른 뒤 아래 <b>[결석 신청]</b>을 눌러 주세요. 여러 개를 한 번에 고를 수 있어요. 결석 신고는 <b>' + esc(d.deadlineText || '수업 시작 전까지') + '</b> 할 수 있어요. 지난 출결은 위 <b>수강 내역</b>의 달력에서 보세요.</p>';
+  h += '<h2 class="sec-title">수업 일정 · 결석 신청</h2>';
+  h += '<p class="small muted">못 가는 수업의 <b style="color:var(--abs)">[결석 신청]</b> 버튼을 누른 뒤 아래 <b>[신청하기]</b>를 눌러 주세요. 여러 개를 한 번에 고를 수 있어요. 결석 신청은 <b>' + esc(d.deadlineText || '수업 시작 전까지') + '</b> 할 수 있어요. 지난 출결은 위 <b>수강 내역</b>의 달력에서 보세요.</p>';
   const days = Object.keys(byDay).sort();
   if (!days.length) h += '<div class="card empty" style="margin-top:14px">' + (d.kids.some(k => k.classes.some(c => !c.start)) ? '수업 일정이 아직 정해지지 않았어요. 일정이 나오면 여기에 보여요.' : '앞으로 예정된 수업이 없어요.') + '</div>';
   days.forEach(day => {
@@ -420,7 +420,7 @@ function renderMy() {
     const selectable = ss.filter(s => s.canReport && !s.report);
     const allOn = selectable.length && selectable.every(s => S.sel.has(key(s)));
     h += '<section class="day"><div class="day-h"><h3>' + md(day) + (day === today ? '<span class="today">오늘</span>' : day === addDays(today, 1) ? '<span class="today" style="background:var(--accent-soft);color:var(--accent)">내일</span>' : '') + '</h3>' +
-      (selectable.length > 1 ? '<button class="linkbtn small" data-act="pick-day" data-day="' + day + '">' + (allOn ? '선택 해제' : '이 날 모두 결석') + '</button>' : '') + '</div>' +
+      (selectable.length > 1 ? '<button class="linkbtn small" data-act="pick-day" data-day="' + day + '">' + (allOn ? '선택 해제' : '이 날 모두 결석 신청') + '</button>' : '') + '</div>' +
       ss.map(s => sesRow(s, multi && S.kid === 'all')).join('') + '</section>';
   });
   if (d.contact) h += '<div class="note" style="margin-top:16px">신고 마감이 지났거나, 수강 내역이 다르거나, 수업을 그만두려면 <a href="tel:' + esc(d.contact) + '">' + esc(d.contact) + '</a> 로 연락해 주세요.</div>';
@@ -438,7 +438,7 @@ function sesRow(s, multi, isPast) {
   if (s.report) rep = '<div class="rep">결석 신청함 · ' + esc(s.reason) + (s.memo ? ' · ' + esc(s.memo) : '') + '</div>';
   if (s.canReport) {
     act = s.report ? '<span class="badge abs">결석 신청됨</span><button class="linkbtn xs" data-act="cancel" data-k="' + esc(k) + '">신청 취소</button>'
-      : '<button class="pick" data-act="pick" data-k="' + esc(k) + '" aria-pressed="' + on + '">' + (on ? '✓ 결석' : '결석') + '</button>';
+      : '<button class="pick" data-act="pick" data-k="' + esc(k) + '" aria-pressed="' + on + '">' + (on ? '✓ 결석 신청' : '결석 신청') + '</button>';
   } else if (s.past || isPast) {
     act = s.att === '출석' ? '<span class="badge ok">출석</span>' : s.att === '결석' ? '<span class="badge abs">결석</span>' : s.report ? '<span class="badge abs">결석 신청</span>' : '<span class="badge neutral">확인 전</span>';
   } else {
@@ -447,13 +447,13 @@ function sesRow(s, multi, isPast) {
   return '<div class="ses' + (on ? ' sel' : '') + '"><div class="tm">' + esc(s.start) + '<small>' + esc(s.end) + '</small></div><div><div class="nm">' + esc(s.className) + '</div><div class="meta">' + (multi ? '<span class="kid">' + esc(s.kid) + '</span>' : '') + (isPast ? mdShort(s.date) + ' · ' : '') + esc(s.place || '') + '</div>' + rep + '</div><div class="act">' + act + '</div></div>';
 }
 /** 프로그램 운영 기간 전체를 달력으로: 출석 · 결석 · 결석 신고 · 예정 · 기록 없음 · 휴강 */
-const CAL = { p: ['출석', '출'], a: ['결석', '결'], r: ['결석 신고', '신고'], u: ['예정', ''], n: ['출결 기록 없음', '·'] };
+const CAL = { p: ['출석', '출'], a: ['결석', '결'], r: ['결석 신청', '신청'], u: ['예정', ''], n: ['출결 기록 없음', '·'] };
 function calHTML(c, today) {
   if (!c.cal) return c.start ? '' : '<div class="xs muted" style="margin-top:8px">수업 일정이 정해지면 출결 달력이 보여요.</div>';
   const closed = S.calClosed.has(c.eid);
   const n = { p: 0, a: 0, r: 0, u: 0, n: 0 };
   c.cal.forEach(x => { n[x.s]++; });
-  let h = '<div class="cal-wrap"><div class="cal-top"><b>출결 달력</b><span class="xs muted">전체 ' + c.cal.length + '회 · 출석 ' + n.p + ' · 결석 ' + n.a + (n.r ? ' · 신고 ' + n.r : '') + '</span><button class="linkbtn xs" data-act="cal-tog" data-eid="' + esc(c.eid) + '">' + (closed ? '펼치기' : '접기') + '</button></div>';
+  let h = '<div class="cal-wrap"><div class="cal-top"><b>출결 달력</b><span class="xs muted">전체 ' + c.cal.length + '회 · 출석 ' + n.p + ' · 결석 ' + n.a + (n.r ? ' · 신청 ' + n.r : '') + '</span><button class="linkbtn xs" data-act="cal-tog" data-eid="' + esc(c.eid) + '">' + (closed ? '펼치기' : '접기') + '</button></div>';
   if (closed) return h + '</div>';
   const byDay = {}; c.cal.forEach(x => { byDay[x.d] = x; });
   const offDay = {}; (c.offs || []).forEach(o => { offDay[o.d] = o; });
@@ -477,14 +477,14 @@ function calHTML(c, today) {
     else h += '<div class="c' + td + '">' + dd + '</div>';
   }
   h += '</div></div>';
-  h += '<div class="legend"><span><em style="background:var(--ok-soft)"></em>출석</span><span><em style="background:var(--abs)"></em>결석</span><span><em style="background:var(--abs-soft)"></em>결석 신고</span><span><em style="background:#fff;box-shadow:inset 0 0 0 1.5px var(--line)"></em>예정</span><span><em style="background:var(--neutral-soft)"></em>기록 없음</span><span><em style="background:repeating-linear-gradient(-45deg,#EEF1EA 0 3px,#E1E7DA 3px 6px)"></em>휴강</span></div>';
+  h += '<div class="legend"><span><em style="background:var(--ok-soft)"></em>출석</span><span><em style="background:var(--abs)"></em>결석</span><span><em style="background:var(--abs-soft)"></em>결석 신청</span><span><em style="background:#fff;box-shadow:inset 0 0 0 1.5px var(--line)"></em>예정</span><span><em style="background:var(--neutral-soft)"></em>기록 없음</span><span><em style="background:repeating-linear-gradient(-45deg,#EEF1EA 0 3px,#E1E7DA 3px 6px)"></em>휴강</span></div>';
   return h + '</div>';
 }
 function renderDock() {
   let el = $('#dock');
   if (S.view !== 'my' || !S.sel.size) { if (el) el.remove(); return; }
   if (!el) { el = document.createElement('div'); el.id = 'dock'; el.className = 'dock'; document.body.appendChild(el); }
-  el.innerHTML = '<div class="dock-in"><span><b>' + S.sel.size + '개</b> 수업 선택</span><span style="display:flex;gap:8px"><button class="btn line sm" data-act="clear-sel">취소</button><button class="btn abs" data-act="open-report">결석 신청</button></span></div>';
+  el.innerHTML = '<div class="dock-in"><span><b>' + S.sel.size + '개</b> 수업 선택</span><span style="display:flex;gap:8px"><button class="btn line sm" data-act="clear-sel">취소</button><button class="btn abs" data-act="open-report">신청하기</button></span></div>';
 }
 function selectedSessions() { return S.pdata.sessions.filter(s => S.sel.has(key(s))); }
 function openReport() {
@@ -987,7 +987,7 @@ document.addEventListener('submit', async (ev) => {
   if (f.id === 'offForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { await rpc('saveOff', S.pin, fd.get('date'), fd.get('cls'), fd.get('reason'), true); toast('휴강일을 추가했어요.'); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
   if (f.id === 'tchForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { const r = await rpc('saveTeacher', S.pin, { name: fd.get('name'), phone: fd.get('phone'), type: fd.get('type') }); await loadStaff(null, true); pinModal('강사 등록 완료', r); } catch (e) { busy(btn, false); toast(e.message, true); } }
   if (f.id === 'tchEdit') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { await rpc('saveTeacher', S.pin, { oldName: f.dataset.old, name: fd.get('name'), phone: fd.get('phone'), type: fd.get('type'), use: !!fd.get('use') }); modal(''); toast('저장했어요.'); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
-  if (f.id === 'setForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { const r = await rpc('setDeadline', S.pin, fd.get('dl')); toast('저장했어요. 학부모 화면: 결석 신고는 ' + r.text + ' 할 수 있어요.'); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
+  if (f.id === 'setForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { const r = await rpc('setDeadline', S.pin, fd.get('dl')); toast('저장했어요. 학부모 화면: 결석 신청은 ' + r.text + ' 할 수 있어요.'); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
   if (f.id === 'pinForm') {
     const fd = new FormData(f); S.pin = String(fd.get('pin')).trim();
     if (fd.get('remember')) store.set(PIN_KEY, S.pin);
