@@ -183,6 +183,24 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .pick-list{display:grid;gap:8px;max-height:40vh;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--accent-pale)}
 .pick-list .grp{font-weight:700;font-size:13px;color:#7A5A00;margin-top:4px}
 .pick-list .check{align-items:flex-start}
+.sch-row{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding-top:8px;margin-top:2px;border-top:1px dashed var(--line)}
+.spk{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--accent-pale)}
+.spk-sel{margin-bottom:8px;line-height:1.9}
+.spk-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.spk-tabs .chip[aria-pressed="true"]{background:#7A5A00;border-color:#7A5A00}
+.spk-q{min-height:42px;font-size:15px;margin-bottom:8px}
+.spk-list{max-height:34vh;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 12px}
+.spk-r{display:contents}
+.spk-r[hidden],.spk-r label[hidden],.spk-r .grp[hidden]{display:none}
+.spk-list .grp{grid-column:1 / -1;font-weight:700;font-size:13px;color:#7A5A00;margin-top:6px}
+.spk-list .check{font-size:14px}
+.spk-none{grid-column:1 / -1}
+.sch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.grp-h{font:17px var(--font-display);color:#7A5A00;margin:16px 0 8px}
+.grp-h small{font:600 12px var(--font-body);color:var(--fg-muted)}
+.sch-item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;min-height:58px}
+.sch-item.has{border-color:#E8C65A;background:#FFFBEA}
+.sch-item b{font-size:14.5px}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 6px}
 .cal-nav .cal-mh{margin:0;font-size:15px}
 .cal-nav button{min-width:40px;min-height:36px;border:1.5px solid var(--line);background:#fff;border-radius:10px;font-weight:700;color:var(--accent)}
@@ -344,7 +362,7 @@ function busy(btn, on) { if (!btn) return; if (on) { btn.dataset.label = btn.inn
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M9 15l2 2 4-4"/></svg>';
 
 /* ───────── 상태 ───────── */
-const S = { pub: null, view: '', parent: null, pdata: null, kid: 'all', sel: new Set(), calClosed: new Set(), calMonth: {}, type: 'all', school: 'all', vd: null, showCls: true, reg: { kid: '', grade: '', ban: '', phone: '', guardian: '', ids: new Set() },
+const S = { pub: null, view: '', parent: null, pdata: null, kid: 'all', sel: new Set(), calClosed: new Set(), calMonth: {}, type: 'all', school: 'all', region: 'all', schTab: '', vd: null, showCls: true, reg: { kid: '', grade: '', ban: '', phone: '', guardian: '', ids: new Set() },
   pin: '', sdata: null, date: '', open: {}, tab: 'roster', timer: null };
 const PAGE = new URLSearchParams(location.search).get('page') || '';
 const app = $('#app');
@@ -698,14 +716,21 @@ function typeList(v) { return String(v || '').split(/[,，\/]/).map(x => x.trim(
 function tbadges(v) { return typeList(v).map(t => '<span class="tbadge">' + esc(t) + '</span>').join(''); }
 /** 관리자 데이터를 고른 운영 유형으로 거름 */
 function inType(t) { const l = typeList(t); return S.type === 'all' || (S.type === '_none' ? !l.length : l.indexOf(S.type) >= 0); }
-function inSchool(v) { return S.school === 'all' || (S.school === '_none' ? !v : v === S.school); }
+/** 학교 → 지역 (천안·아산·당진·홍성·대전·기타) */
+function regionOf(v) { const x = ((S.sdata && S.sdata.siteInfo) || []).find(y => y.name === v); return x ? x.region : (v ? '기타' : ''); }
+/** 학교 필터: 학교 하나 → 그 학교, 지역만 → 그 지역 학교 전체, 학교 미지정 → 빈칸 */
+function inSchool(v) {
+  if (S.school === '_none') return !v;
+  if (S.school !== 'all') return v === S.school;
+  return S.region === 'all' || regionOf(v) === S.region;
+}
 function schoolsOf(v) { return String(v || '').split(/[,，]/).map(x => x.trim()).filter(Boolean); }
 function filterType(d) {
-  if (S.type === 'all' && S.school === 'all') return d;
+  if (S.type === 'all' && S.school === 'all' && S.region === 'all') return d;
   const ok = (x) => inType(x.type) && inSchool(x.school);
   const cls = d.classes.filter(ok); const ids = {}; cls.forEach(c => { ids[c.id] = true; });
   const tOk = (t) => (S.type === 'all' || (S.type === '_none' ? !typeList(t.type).length && !t.types.length : (typeList(t.type).indexOf(S.type) >= 0 || t.types.indexOf(S.type) >= 0))) &&
-    (S.school === 'all' || (S.school === '_none' ? !schoolsOf(t.school).length && !t.classSchools.length : (schoolsOf(t.school).indexOf(S.school) >= 0 || t.classSchools.indexOf(S.school) >= 0)));
+    (S.school === '_none' ? !schoolsOf(t.school).length && !t.classSchools.length : (S.school === 'all' && S.region === 'all') || schoolsOf(t.school).concat(t.classSchools).some(inSchool));
   return Object.assign({}, d, {
     classes: cls, upcoming: d.upcoming.filter(u => ids[u.classId]),
     regClasses: d.regClasses.filter(ok), enrollments: d.enrollments.filter(ok),
@@ -741,14 +766,14 @@ function adminCalHTML(d, today) {
     '<div class="acal-g">' + DOW.split('').map((w, i) => '<div class="dw' + (i === 0 ? ' sun' : i === 6 ? ' sat' : '') + '">' + w + '</div>').join('') + g + '</div>' +
     '<p class="xs muted" style="margin-top:8px">' + (d.role === 'admin' ? '' : '내 프로그램(' + d.classes.map(c => esc(c.name)).join(', ') + ')만 보여요. ') + '날짜를 누르면 아래에 그날 프로그램 출석부가 보여요. 숫자 = 그날 수업 수 · ✓ = 출결 체크 끝 · 빨간 글씨 = 학부모 결석 신고</p></div>';
 }
-function typeLabel() { const a = S.type === 'all' ? '' : S.type === '_none' ? '유형 미지정' : S.type; const b = S.school === 'all' ? '' : S.school === '_none' ? '학교 미지정' : S.school; return [b, a].filter(Boolean).join(' · '); }
+function typeLabel() { const a = S.type === 'all' ? '' : S.type === '_none' ? '유형 미지정' : S.type; const b = S.school === '_none' ? '학교 미지정' : S.school !== 'all' ? S.school : S.region !== 'all' ? S.region : ''; return [b, a].filter(Boolean).join(' · '); }
 function renderStaff() {
   S.view = 'staff';
   let d = S.sdata; const today = d.now.date;
   const admin = d.role === 'admin';
   let h = header((admin ? '관리자' : esc(d.teacher) + ' 선생님') + (d.school ? ' · ' + d.school : ''), '<button class="btn sm line" data-act="s-refresh">새로고침</button><button class="btn sm line" data-act="s-logout">나가기</button>');
   // 강사: 출석부 · 수강생 명단(보기 전용) / 관리자: + 수강 등록 · 프로그램 · 강사 관리 · 설정
-  const tabs = admin ? [['roster', '출석부'], ['reg', '수강 등록'], ['list', '수강생 명단 ' + new Set(d.enrollments.filter(e => e.status === '수강').map(e => e.kid + e.phone)).size + '명'], ['prog', '프로그램'], ['tch', '강사 관리'], ['set', '설정']].concat(d.pending.length ? [['pending', '승인 대기 ' + d.pending.length]] : [])
+  const tabs = admin ? [['roster', '출석부'], ['reg', '수강 등록'], ['list', '수강생 명단 ' + new Set(d.enrollments.filter(e => e.status === '수강').map(e => e.kid + e.phone)).size + '명'], ['prog', '프로그램'], ['tch', '강사 관리'], ['sch', '학교'], ['set', '설정']].concat(d.pending.length ? [['pending', '승인 대기 ' + d.pending.length]] : [])
     : [['roster', '출석부'], ['stu', '수강생 명단']];
   if (!tabs.some(t => t[0] === S.tab)) S.tab = 'roster';
   h += '<div class="tabs" role="tablist">' + tabs.map(t => '<button class="chip" role="tab" data-act="tab" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + '</button>').join('') + '</div>';
@@ -759,12 +784,24 @@ function renderStaff() {
     const none = live.filter(p => !typeList(p.type).length).length;
     if (S.tab !== 'set') h += '<div class="typebar" role="group" aria-label="운영 유형"><b>운영 유형</b>' + [['all', '전체', live.length]].concat(d.types.map(t => [t, t, live.filter(p => typeList(p.type).indexOf(t) >= 0).length])).concat(none ? [['_none', '유형 미지정', none]] : [])
       .map(t => '<button class="chip" data-act="type" data-type="' + esc(t[0]) + '" aria-pressed="' + (S.type === t[0]) + '">' + esc(t[1]) + ' <small>' + t[2] + '</small></button>').join('') + '</div>';
-    // 학교 (운영 기관)
+    // 학교: 지역(천안·아산·당진·홍성·대전) → 그 지역 학교
     if (S.school !== 'all' && S.school !== '_none' && d.sites.indexOf(S.school) < 0) S.school = 'all';
+    if (S.region !== 'all' && d.regions.indexOf(S.region) < 0) S.region = 'all';
     const liveT = live.filter(p => inType(p.type));
     const noneS = liveT.filter(p => !p.school).length;
-    if (S.tab !== 'set') h += '<div class="typebar school-bar" role="group" aria-label="학교"><b>학교</b>' + [['all', '전체 학교', liveT.length]].concat(d.sites.map(t => [t, t, liveT.filter(p => p.school === t).length])).concat(noneS ? [['_none', '학교 미지정', noneS]] : [])
-      .map(t => '<button class="chip" data-act="school" data-school="' + esc(t[0]) + '" aria-pressed="' + (S.school === t[0]) + '">' + esc(t[1]) + ' <small>' + t[2] + '</small></button>').join('') + '</div>';
+    if (S.tab !== 'set' && S.tab !== 'sch') {
+      const regCnt = (r) => liveT.filter(p => p.school && regionOf(p.school) === r).length;
+      h += '<div class="typebar school-bar" role="group" aria-label="지역"><b>지역</b>' + [['all', '전체', liveT.length]].concat(d.regions.map(r => [r, r, regCnt(r)])).concat(noneS ? [['_none', '학교 미지정', noneS]] : [])
+        .map(t => '<button class="chip" data-act="region" data-region="' + esc(t[0]) + '" aria-pressed="' + (t[0] === '_none' ? S.school === '_none' : S.school !== '_none' && S.region === t[0]) + '">' + esc(t[1]) + ' <small>' + t[2] + '</small></button>').join('');
+      if (S.region !== 'all' && S.school !== '_none') {
+        // 그 지역에서 프로그램이 있는 학교 + 지금 고른 학교
+        const sch = d.siteInfo.filter(x => x.region === S.region).map(x => [x.name, liveT.filter(p => p.school === x.name).length]).filter(x => x[1] || x[0] === S.school);
+        h += '<div class="sch-row"><button class="chip" data-act="school" data-school="all" aria-pressed="' + (S.school === 'all') + '">' + esc(S.region) + ' 전체</button>' +
+          sch.map(x => '<button class="chip" data-act="school" data-school="' + esc(x[0]) + '" aria-pressed="' + (S.school === x[0]) + '">' + esc(x[0].replace(/초등학교/, '초')) + ' <small>' + x[1] + '</small></button>').join('') +
+          '<button class="linkbtn xs" data-act="tab" data-tab="sch">' + esc(S.region) + ' 학교 전체 목록 →</button></div>';
+      }
+      h += '</div>';
+    }
     d = filterType(d);
   }
   S.vd = d;
@@ -773,6 +810,7 @@ function renderStaff() {
   if (!admin && S.tab === 'stu') return only(studentsHTML(d));
   if (admin && S.tab === 'pending') return only(pendingHTML(d));
   if (admin && S.tab === 'prog') return only(progHTML(d));
+  if (admin && S.tab === 'sch') return only(schoolsHTML(d));
   if (admin && S.tab === 'tch') return only(tchHTML(d));
   if (admin && S.tab === 'set') return only(setHTML(d));
   if (admin && S.tab === 'reg') { h += regFormHTML(); app.className = 'wrap wide'; app.innerHTML = h; renderClsList(); return; }
@@ -830,14 +868,17 @@ function studentsHTML(d) {
 /* 관리자: 프로그램 (일정·내용 수정) + 휴강일 */
 const WK = [[1, '월'], [2, '화'], [3, '수'], [4, '목'], [5, '금'], [6, '토'], [0, '일']];
 function progHTML(d) {
+  let h0 = '';
   // 학교별 칸 → 그 안에서 운영 구분 · 이름 순
   const ps = d.programs.slice().sort((a, b) => (b.use - a.use) || String(a.term).localeCompare(String(b.term), 'ko') || a.name.localeCompare(b.name, 'ko'));
-  const groups = S.sdata.sites.filter(sc => inSchool(sc)).map(sc => [sc, ps.filter(p => p.school === sc)]);
+  const groups = S.sdata.siteInfo.filter(x => inSchool(x.name) && (ps.some(p => p.school === x.name) || x.name === S.school)).map(x => [x.name, ps.filter(p => p.school === x.name)]);
+  if (!groups.length && S.school === 'all' && S.region !== 'all') h0 = '<div class="empty small">' + esc(S.region) + ' 학교 프로그램이 아직 없어요. [＋ 새 프로그램]에서 학교를 골라 만들어 주세요.</div>';
   const none = ps.filter(p => !p.school);
-  if (S.school === 'all' || S.school === '_none') groups.push(['', none]);
+  if ((S.school === 'all' && S.region === 'all') || S.school === '_none') groups.push(['', none]);
   let h = '<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b>' + (typeLabel() ? esc(typeLabel()) + ' ' : '') + '프로그램 ' + ps.filter(p => p.use).length + '개</b><button class="btn primary sm" data-act="prog-edit" data-id="">＋ 새 프로그램</button></div>' +
     '<p class="xs muted" style="margin:6px 0 4px">프로그램은 <b>학교마다 따로</b> 만들어요 (학교마다 강사·일정·수강생이 달라서). 새로 만들 때 학교를 여러 개 고르면 학교 수만큼 한 번에 만들어져요.</p>';
-  if (none.length && (S.school === 'all' || S.school === '_none')) h += '<div class="note warn" style="margin:10px 0">학교가 정해지지 않은 프로그램이 ' + none.length + '개 있어요. <button class="btn sm primary" data-act="bulk-school" style="margin-left:6px">학교별로 만들기</button></div>';
+  if (h0) h += h0;
+  if (none.length && ((S.school === 'all' && S.region === 'all') || S.school === '_none')) h += '<div class="note warn" style="margin:10px 0">학교가 정해지지 않은 프로그램이 ' + none.length + '개 있어요. <button class="btn sm primary" data-act="bulk-school" style="margin-left:6px">학교별로 만들기</button></div>';
   h += groups.map(g => {
     const list = g[1];
     if (!list.length && !g[0]) return '';
@@ -854,7 +895,55 @@ function progHTML(d) {
     (d.offs.length ? '<table class="tbl" style="margin-top:12px"><tbody>' + d.offs.map(o => '<tr><td><b>' + mdShort(o.date) + '</b></td><td class="small">' + esc(o.className) + (o.school ? ' · ' + esc(o.school) : '') + '</td><td class="small">' + esc(o.reason) + '</td><td style="text-align:right"><button class="btn line sm" data-act="off-del" data-date="' + esc(o.date) + '" data-cls="' + esc(o.cls) + '">삭제</button></td></tr>').join('') + '</tbody></table>' : '<div class="empty small">등록된 휴강일이 없어요.</div>') + '</div>';
   return h;
 }
-function schoolChecks(name, chosen, skip) { return '<div class="daypick">' + S.sdata.sites.filter(sc => sc !== skip).map(sc => '<label><input type="checkbox" name="' + name + '" value="' + esc(sc) + '"' + (chosen.indexOf(sc) >= 0 ? ' checked' : '') + '><span style="padding:0 12px">' + esc(sc) + '</span></label>').join('') + '</div>'; }
+/** 학교 고르기: 지역 탭 → 구역별 학교 목록 (+ 이름 찾기). multi=false 면 하나만 (미지정 포함) */
+function schoolPicker(name, chosen, opt) {
+  opt = opt || {}; const multi = opt.multi !== false;
+  const info = S.sdata.siteInfo.filter(x => x.name !== opt.skip);
+  const regs = info.map(x => x.region).filter((v, i, a) => a.indexOf(v) === i);
+  const first = (chosen[0] && regionOf(chosen[0])) || (S.region !== 'all' && regs.indexOf(S.region) >= 0 ? S.region : regs[0]);
+  const type = multi ? 'checkbox' : 'radio';
+  let h = '<div class="spk" data-name="' + esc(name) + '"><div class="spk-sel">' + spkSummary(chosen) + '</div>' +
+    '<div class="spk-tabs">' + regs.map(r => '<button type="button" class="chip" data-act="spk-reg" data-region="' + esc(r) + '" aria-pressed="' + (r === first) + '">' + esc(r) + ' <small>' + info.filter(x => x.region === r).length + '</small></button>').join('') + '</div>' +
+    '<input class="input spk-q" type="search" placeholder="학교 이름으로 찾기 (예: 불당)" aria-label="학교 이름으로 찾기">' + '<div class="spk-list">';
+  if (!multi) h += '<label class="check spk-none"><input type="radio" name="' + esc(name) + '" value=""' + (!chosen[0] ? ' checked' : '') + '> <span class="muted">(학교 미지정)</span></label>';
+  regs.forEach(r => {
+    h += '<div class="spk-r" data-r="' + esc(r) + '"' + (r === first ? '' : ' hidden') + '>';
+    let lastArea = null;
+    info.filter(x => x.region === r).forEach(x => {
+      if (x.area !== lastArea) { lastArea = x.area; if (x.area) h += '<div class="grp">' + esc(r + ' ' + x.area) + '</div>'; }
+      h += '<label class="check" data-n="' + esc(x.name) + '"><input type="' + type + '" name="' + esc(name) + '" value="' + esc(x.name) + '"' + (chosen.indexOf(x.name) >= 0 ? ' checked' : '') + '> <span>' + esc(x.name) + '</span></label>';
+    });
+    h += '</div>';
+  });
+  return h + '</div></div>';
+}
+function spkSummary(list) { return list.length ? '<span class="xs muted">선택 ' + list.length + '곳:</span> ' + list.slice(0, 12).map(sbadge).join('') + (list.length > 12 ? ' <span class="xs muted">외 ' + (list.length - 12) + '곳</span>' : '') : '<span class="xs muted">아직 고른 학교가 없어요</span>'; }
+function spkFilter(pk, q) {
+  q = String(q || '').replace(/\s/g, '');
+  const active = (pk.querySelector('[data-act=spk-reg][aria-pressed="true"]') || {}).dataset;
+  pk.querySelectorAll('.spk-r').forEach(el => { el.hidden = q ? false : el.dataset.r !== (active && active.region); });
+  pk.querySelectorAll('.spk-r label').forEach(l => { l.hidden = !!q && l.dataset.n.replace(/\s/g, '').indexOf(q) < 0; });
+  pk.querySelectorAll('.spk-r .grp').forEach(g => { g.hidden = !!q; });
+}
+/* 관리자: 학교 목록 (지역 탭 → 구역별 학교, 학교마다 프로그램·강사·수강생 수) */
+function schoolsHTML(d) {
+  const info = d.siteInfo; const regs = d.regions;
+  if (!S.schTab || regs.indexOf(S.schTab) < 0) S.schTab = S.region !== 'all' && regs.indexOf(S.region) >= 0 ? S.region : regs[0];
+  const progs = S.sdata.programs, tch = S.sdata.teachers, enr = S.sdata.enrollments;
+  const stuCnt = (n) => new Set(enr.filter(e => e.school === n && e.status === '수강').map(e => e.kid + e.phone)).size;
+  let h = '<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b>학교 목록</b><span class="xs muted">전체 ' + info.filter(x => x.region !== '기타').length + '곳 · 학교 추가·이름 수정은 스프레드시트 [학교] 탭</span></div>' +
+    '<div class="tabs" role="tablist" style="margin-top:10px">' + regs.map(r => '<button class="chip" role="tab" data-act="sch-reg" data-region="' + esc(r) + '" aria-pressed="' + (S.schTab === r) + '">' + esc(r) + ' <small>' + info.filter(x => x.region === r).length + '</small></button>').join('') + '</div>';
+  const list = info.filter(x => x.region === S.schTab);
+  const used = list.filter(x => progs.some(p => p.school === x.name)).length;
+  h += '<p class="xs muted" style="margin:6px 0 10px">' + esc(S.schTab) + ' 초등학교 ' + list.length + '곳 · 프로그램이 있는 학교 ' + used + '곳. 학교 이름을 누르면 그 학교 프로그램을 봐요.</p><div class="sch-grid">';
+  let lastArea = null;
+  list.forEach(x => {
+    if (x.area !== lastArea) { lastArea = x.area; if (x.area) h += '</div><div class="grp-h">' + esc(S.schTab + ' ' + x.area) + ' <small>' + list.filter(y => y.area === x.area).length + '곳</small></div><div class="sch-grid">'; }
+    const np = progs.filter(p => p.school === x.name).length, nt = tch.filter(t => schoolsOf(t.school).indexOf(x.name) >= 0 || t.classSchools.indexOf(x.name) >= 0).length, ns = stuCnt(x.name);
+    h += '<button class="sch-item' + (np ? ' has' : '') + '" data-act="sch-go" data-region="' + esc(x.region) + '" data-school="' + esc(x.name) + '"><b>' + esc(x.name) + '</b><span class="xs">' + (np || nt || ns ? '프로그램 ' + np + ' · 강사 ' + nt + ' · 학생 ' + ns : '<span class="muted">아직 없음</span>') + '</span></button>';
+  });
+  return h + '</div></div>';
+}
 function teacherNames(v) { return String(v || '').split(/[,，\/]/).map(x => x.trim()).filter(Boolean); }
 function openProg(id) {
   const d = S.sdata;
@@ -866,8 +955,8 @@ function openProg(id) {
   const ts = d.teachers.filter(t => t.use || cur.indexOf(t.name) >= 0).sort((a, b) => { const m = (t) => p.school && (schoolsOf(t.school).indexOf(p.school) >= 0) ? 1 : 0; return (m(b) - m(a)) || a.name.localeCompare(b.name, 'ko'); });
   modal('<h2>' + (isNew ? '새 프로그램' : '프로그램 수정') + '</h2><form id="progForm" data-id="' + esc(p.id) + '" class="form-grid">' +
     '<label class="field wide"><span>프로그램 이름</span><input class="input" name="name" required maxlength="40" value="' + esc(p.name) + '"></label>' +
-    (isNew ? '<div class="field wide"><span>학교 <em>(여러 개 고르면 학교마다 하나씩 만들어져요)</em></span>' + schoolChecks('school', p.school ? [p.school] : [], '') + '</div>'
-      : '<label class="field"><span>학교</span><select class="input" name="school"><option value="">(미지정)</option>' + d.sites.map(sc => '<option' + (sc === p.school ? ' selected' : '') + '>' + esc(sc) + '</option>').join('') + '</select></label>') +
+    (isNew ? '<div class="field wide"><span>학교 <em>(여러 개 고르면 학교마다 하나씩 만들어져요)</em></span>' + schoolPicker('school', p.school ? [p.school] : [], { multi: true }) + '</div>'
+      : '<div class="field wide"><span>학교</span>' + schoolPicker('school', p.school ? [p.school] : [], { multi: false }) + '</div>') +
     '<label class="field"><span>운영 구분 <em>(예: 2026 겨울방학)</em></span><input class="input" name="term" maxlength="30" value="' + esc(p.term) + '"></label>' +
     '<div class="field wide"><span>운영 유형 <em>(여러 개 고를 수 있어요)</em></span><div class="daypick">' + d.types.map(t => '<label><input type="checkbox" name="ptype" value="' + esc(t) + '"' + (typeList(p.type).indexOf(t) >= 0 ? ' checked' : '') + '><span style="padding:0 12px">' + esc(t) + '</span></label>').join('') + '</div></div>' +
     '<div class="field wide"><span>강사 <em>(여러 명 고를 수 있어요' + (isNew ? ' · 학교를 여러 개 고르면 첫 학교에만 지정돼요' : '') + ')</em></span>' + (ts.length ? '<div class="pick-list">' + ts.map(t => '<label class="check"><input type="checkbox" name="teacher" value="' + esc(t.name) + '"' + (cur.indexOf(t.name) >= 0 ? ' checked' : '') + '> <span><b>' + esc(t.name) + '</b>' + schoolsOf(t.school).map(sbadge).join('') + (t.use ? '' : ' <span class="badge neutral">사용 중지</span>') + '</span></label>').join('') + '</div>' : '<div class="note">[강사 관리]에서 강사를 먼저 등록해 주세요.</div>') + '</div>' +
@@ -881,7 +970,7 @@ function openProg(id) {
     '<label class="field"><span>대상 학년</span><input class="input" name="grade" maxlength="20" value="' + esc(p.grade) + '" placeholder="1~6학년"></label>' +
     '<label class="field"><span>정원 <em>(빈칸 = 제한 없음)</em></span><input class="input" type="number" min="0" name="cap" value="' + esc(p.cap || '') + '"></label>' +
     '<label class="check wide" style="align-self:center"><input type="checkbox" name="use"' + (p.use ? ' checked' : '') + '> 사용 (끄면 수강 등록·학부모 화면·출석부에서 숨김)</label>' +
-    (!isNew ? '<div class="field wide"><span>다른 학교에도 만들기 <em>(선택 — 같은 내용으로 복사, 강사·수강생은 비워 둠)</em></span>' + schoolChecks('copyto', [], p.school) + '</div>' : '') +
+    (!isNew ? '<div class="field wide"><span>다른 학교에도 만들기 <em>(선택 — 같은 내용으로 복사, 강사·수강생은 비워 둠)</em></span>' + schoolPicker('copyto', [], { multi: true, skip: p.school }) + '</div>' : '') +
     '<div class="sheet-act wide"><button class="btn line" type="button" data-act="close">닫기</button><button class="btn primary" type="submit">저장</button></div></form>');
 }
 async function saveProg(f) {
@@ -901,7 +990,7 @@ function openBulkSchool() {
   const none = S.vd.programs.filter(p => !p.school);
   modal('<h2>학교별로 만들기</h2><form id="bulkForm" class="stack"><p class="small">학교가 정해지지 않은 프로그램 <b>' + none.length + '개</b>를 고른 학교마다 하나씩 만들어요. 원래 프로그램은 첫 번째 학교로 정해지고, 나머지 학교에는 같은 내용으로 복사돼요 (강사·수강생은 학교마다 따로 지정).</p>' +
     '<div class="pick-list">' + none.map(p => '<label class="check"><input type="checkbox" name="ids" value="' + esc(p.id) + '" checked> <span><b>' + esc(p.name) + '</b> <span class="xs muted">' + esc(p.term || '') + '</span>' + (p.count ? ' <span class="badge warn">수강생 ' + p.count + '명 — 첫 학교에 남음</span>' : '') + '</span></label>').join('') + '</div>' +
-    '<div class="field"><span>학교</span>' + schoolChecks('school', S.sdata.sites, '') + '</div>' +
+    '<div class="field"><span>학교 <em>(지역 탭에서 고르거나 이름으로 찾아요)</em></span>' + schoolPicker('school', S.school !== 'all' && S.school !== '_none' ? [S.school] : [], { multi: true }) + '</div>' +
     '<div class="sheet-act"><button class="btn line" type="button" data-act="close">닫기</button><button class="btn primary" type="submit">만들기</button></div></form>');
 }
 
@@ -912,7 +1001,7 @@ function tchHTML(d) {
   let h = '<div class="card" style="margin-top:14px"><b>강사 등록</b><p class="xs muted" style="margin:4px 0 10px">등록하면 4자리 PIN 이 만들어져요. 강사는 <b>' + esc(url) + '</b> 에서 PIN 으로 들어가 <b>맡은 프로그램만</b> 출석부·출결 체크·수강생 명단(보기)을 쓸 수 있어요. 맡을 프로그램은 등록한 뒤 [수정 · 프로그램]에서 고르거나, [프로그램]에서 강사를 고르면 돼요.</p>' +
     '<form id="tchForm" class="form-grid"><label class="field"><span>강사 이름</span><input class="input" name="name" required maxlength="20" placeholder="예: 김민지"></label><label class="field"><span>연락처 <em>(선택)</em></span><input class="input" name="phone" maxlength="20" inputmode="tel" data-phone></label>' +
     '<label class="field"><span>운영 유형</span><select class="input" name="type"><option value="">(미지정)</option>' + d.types.map(t => '<option' + (t === S.type ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></label>' +
-    '<div class="field wide"><span>학교 <em>(여러 곳 가능)</em></span>' + schoolChecks('schools', defSchool, '') + '</div>' +
+    '<div class="field wide"><span>학교 <em>(여러 곳 가능)</em></span>' + schoolPicker('schools', defSchool, { multi: true }) + '</div>' +
     '<div class="field wide"><button class="btn primary" type="submit">강사 등록</button></div></form></div>';
   if (d.unassigned && d.unassigned.length) h += '<div class="note warn" style="margin-top:14px">강사 목록에 없는 이름이 프로그램에 적혀 있어요: ' + d.unassigned.map(esc).join(', ') + '. 그 이름으로 강사를 등록하면 PIN 으로 들어갈 수 있어요.</div>';
   h += '<div class="card" style="margin-top:14px;overflow:auto"><b>' + (typeLabel() ? esc(typeLabel()) + ' ' : '') + '강사 ' + d.teachers.length + '명</b>' + (d.teachers.length ? '<table class="tbl" style="margin-top:8px"><thead><tr><th>이름</th><th>학교</th><th>PIN</th><th>연락처</th><th>맡은 프로그램</th><th></th></tr></thead><tbody>' +
@@ -928,7 +1017,7 @@ function openTch(name) {
   const lists = order.map(sc => [sc, progs.filter(p => (p.school || '') === sc).sort((a, b) => a.name.localeCompare(b.name, 'ko'))]).filter(x => x[1].length);
   modal('<h2>강사 수정 · 맡을 프로그램</h2><form id="tchEdit" data-old="' + esc(t.name) + '" class="form-grid"><label class="field"><span>이름 <em>(바꾸면 맡은 프로그램도 같이 바뀜)</em></span><input class="input" name="name" required maxlength="20" value="' + esc(t.name) + '"></label><label class="field"><span>연락처</span><input class="input" name="phone" maxlength="20" value="' + esc(t.phone) + '" data-phone></label>' +
     '<label class="field"><span>운영 유형</span><select class="input" name="type"><option value="">(미지정)</option>' + S.sdata.types.map(x => '<option' + (x === t.type ? ' selected' : '') + '>' + esc(x) + '</option>').join('') + '</select></label>' +
-    '<div class="field wide"><span>학교 <em>(여러 곳 가능)</em></span>' + schoolChecks('schools', mySch, '') + '</div>' +
+    '<div class="field wide"><span>학교 <em>(여러 곳 가능)</em></span>' + schoolPicker('schools', mySch, { multi: true }) + '</div>' +
     '<div class="field wide"><span>맡을 프로그램 <em>(체크한 프로그램 출석부를 볼 수 있어요 · 같은 프로그램의 다른 강사는 그대로)</em></span><div class="pick-list">' +
       (lists.length ? lists.map(g => '<div class="grp">' + esc(g[0] || '학교 미지정') + '</div>' + g[1].map(p => '<label class="check"><input type="checkbox" name="cls" value="' + esc(p.id) + '"' + (t.classIds.indexOf(p.id) >= 0 ? ' checked' : '') + '> <span><b>' + esc(p.name) + '</b> <span class="xs muted">' + [p.term, p.start ? p.daysText + ' ' + p.start : '일정 미정', teacherNames(p.teacher).filter(n => n !== t.name).length ? '함께: ' + teacherNames(p.teacher).filter(n => n !== t.name).join(', ') : ''].filter(Boolean).map(esc).join(' · ') + '</span></span></label>').join('')).join('') : '<div class="muted small">프로그램이 없어요.</div>') + '</div></div>' +
     '<label class="check wide"><input type="checkbox" name="use"' + (t.use ? ' checked' : '') + '> 사용 (끄면 이 강사 PIN 으로 들어갈 수 없음)</label><div class="sheet-act wide"><button class="btn line" type="button" data-act="close">닫기</button><button class="btn primary" type="submit">저장</button></div></form>');
@@ -1012,6 +1101,10 @@ document.addEventListener('click', async (ev) => {
     }
     case 'goto': S.date = t.dataset.d; loadStaff(t); break;
     case 'toggle': S.open[t.dataset.id] = !S.open[t.dataset.id]; renderStaff(); break;
+    case 'region': { const r = t.dataset.region; if (r === '_none') { S.school = '_none'; S.region = 'all'; } else { S.region = r; S.school = 'all'; } store.set('nb.region', S.region); store.set('nb.school', S.school); S.reg.ids.clear(); renderStaff(); break; }
+    case 'sch-go': S.region = t.dataset.region; S.school = t.dataset.school; S.tab = t.dataset.tab || 'prog'; store.set('nb.region', S.region); store.set('nb.school', S.school); renderStaff(); window.scrollTo(0, 0); break;
+    case 'sch-reg': S.schTab = t.dataset.region; renderStaff(); break;
+    case 'spk-reg': { const pk = t.closest('.spk'); pk.querySelectorAll('[data-act=spk-reg]').forEach(b => b.setAttribute('aria-pressed', b === t)); pk.querySelectorAll('.spk-r').forEach(el => { el.hidden = el.dataset.r !== t.dataset.region; }); const q = pk.querySelector('.spk-q'); if (q) { q.value = ''; spkFilter(pk, ''); } break; }
     case 'school': S.school = t.dataset.school; store.set('nb.school', S.school); S.reg.ids.clear(); $('#toast').classList.add('hidden'); renderStaff(); break;
     case 'type': S.type = t.dataset.type; store.set('nb.type', S.type); S.reg.ids.clear(); $('#toast').classList.add('hidden'); renderStaff(); break;
     case 'tab': S.tab = t.dataset.tab; $('#toast').classList.add('hidden'); renderStaff(); window.scrollTo(0, 0); break;
@@ -1029,11 +1122,12 @@ document.addEventListener('click', async (ev) => {
 });
 document.addEventListener('change', (ev) => {
   const t = ev.target;
+  const pk = t.closest && t.closest('.spk'); if (pk) { const nm = pk.dataset.name; const sel = Array.from(pk.querySelectorAll('input[name="' + nm + '"]:checked')).map(i => i.value).filter(Boolean); pk.querySelector('.spk-sel').innerHTML = spkSummary(sel); }
   if (t.dataset.act === 'pickdate' && t.value) { S.date = t.value; loadStaff(null); }
   if (t.name === 'grade' && $('#regForm')) { S.reg.grade = t.value; renderClsList(); }
   if (t.dataset.cls) { t.checked ? S.reg.ids.add(t.dataset.cls) : S.reg.ids.delete(t.dataset.cls); t.closest('.cls-opt').classList.toggle('on', t.checked); }
 });
-document.addEventListener('input', (ev) => { if (ev.target.id === 'enrQ') { S.q = ev.target.value; renderEnrList(); return; } if (ev.target.hasAttribute('data-phone')) { const el = ev.target; const v = fmtPhone(el.value); if (v !== el.value) el.value = v; } });
+document.addEventListener('input', (ev) => { if (ev.target.classList && ev.target.classList.contains('spk-q')) { spkFilter(ev.target.closest('.spk'), ev.target.value); return; } if (ev.target.id === 'enrQ') { S.q = ev.target.value; renderEnrList(); return; } if (ev.target.hasAttribute('data-phone')) { const el = ev.target; const v = fmtPhone(el.value); if (v !== el.value) el.value = v; } });
 document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && $('#modal .scrim')) modal(''); });
 document.addEventListener('submit', async (ev) => {
   ev.preventDefault();
@@ -1076,7 +1170,7 @@ async function boot() {
   if (PAGE === 't' || PAGE === 'admin') {
     document.title = (IS_ADMIN ? '관리자' : '강사 출석부') + ' · ' + '2026 초등학교 방과후 프로그램(방학집중형) 출결';
     S.pub = await rpc('getPublic').catch(() => null) || { name: '2026 초등학교 방과후 프로그램(방학집중형) 출결' };
-    S.pin = store.get(PIN_KEY) || ''; S.type = IS_ADMIN ? (store.get('nb.type') || 'all') : 'all'; S.school = IS_ADMIN ? (store.get('nb.school') || 'all') : 'all';
+    S.pin = store.get(PIN_KEY) || ''; S.type = IS_ADMIN ? (store.get('nb.type') || 'all') : 'all'; S.school = IS_ADMIN ? (store.get('nb.school') || 'all') : 'all'; S.region = IS_ADMIN ? (store.get('nb.region') || 'all') : 'all';
     if (S.pin) { app.innerHTML = '<div class="loading"><span class="spin"></span> 출석부 불러오는 중…</div>'; await loadStaff(null); if (S.view === 'staff') startPoll(); else if (S.view !== 'pin') renderPin(); }
     else renderPin();
     return;
