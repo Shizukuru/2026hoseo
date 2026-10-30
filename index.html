@@ -189,7 +189,17 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .spk-tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
 .spk-tabs .chip[aria-pressed="true"]{background:#7A5A00;border-color:#7A5A00}
 .spk-q{min-height:42px;font-size:15px;margin-bottom:8px}
-.spk-list{max-height:34vh;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px 12px}
+.spk-list{max-height:30vh;overflow:auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:2px 10px}
+.spk-list label[hidden]{display:none!important}
+.spk-sub .spk-row,.sch-tools .spk-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.chip.sm{padding:4px 10px;font-size:13px}
+.spk-row.ini .chip.sm{min-width:34px;padding:4px 8px;justify-content:center}
+.spk-row .chip[aria-pressed="true"]{background:#7A5A00;border-color:#7A5A00;color:#fff}
+.spk-count{margin-top:6px}
+.sch-tools{margin-top:10px}
+.sch-tools .input{min-height:42px;font-size:15px;margin-bottom:8px}
+.sch-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+.sch-item .st{color:#7A5A00;font-weight:600}
 .spk-r{display:contents}
 .spk-r[hidden],.spk-r label[hidden],.spk-r .grp[hidden]{display:none}
 .spk-list .grp{grid-column:1 / -1;font-weight:700;font-size:13px;color:#7A5A00;margin-top:6px}
@@ -198,7 +208,7 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .sch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .grp-h{font:17px var(--font-display);color:#7A5A00;margin:16px 0 8px}
 .grp-h small{font:600 12px var(--font-body);color:var(--fg-muted)}
-.sch-item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;min-height:58px}
+.sch-item{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 10px;min-height:40px}
 .sch-item.has{border-color:#E8C65A;background:#FFFBEA}
 .sch-item b{font-size:14.5px}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:2px 0 6px}
@@ -357,7 +367,7 @@ function fmtPhone(v) { const d = String(v || '').replace(/\D/g, '').slice(0, 11)
 const store = { get(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* */ } }, del(k) { try { localStorage.removeItem(k); } catch (e) { /* */ } } };
 let toastT = null;
 function toast(msg, err) { const el = $('#toast'); el.textContent = msg; el.className = err ? 'err' : ''; clearTimeout(toastT); toastT = setTimeout(() => el.classList.add('hidden'), err ? 4500 : 2600); }
-function modal(html) { $('#modal').innerHTML = html ? '<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true">' + html + '</div></div>' : ''; const f = $('#modal [autofocus]') || $('#modal .sheet'); if (f && f.focus) f.focus(); }
+function modal(html) { $('#modal').innerHTML = html ? '<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true">' + html + '</div></div>' : ''; $$('#modal .spk').forEach(spkApply); const f = $('#modal [autofocus]') || $('#modal .sheet'); if (f && f.focus) f.focus(); }
 function busy(btn, on) { if (!btn) return; if (on) { btn.dataset.label = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<span class="spin"></span>'; } else { btn.disabled = false; if (btn.dataset.label) btn.innerHTML = btn.dataset.label; } }
 const ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M9 15l2 2 4-4"/></svg>';
 
@@ -805,7 +815,7 @@ function renderStaff() {
     d = filterType(d);
   }
   S.vd = d;
-  const only = (html, after) => { app.className = 'wrap wide'; app.innerHTML = h + html; if (after) after(); };
+  const only = (html, after) => { app.className = 'wrap wide'; app.innerHTML = h + html; $$('#app .spk').forEach(spkApply); if (after) after(); };
   const on = d.classes.filter(c => c.session), offc = d.classes.filter(c => !c.session);
   if (!admin && S.tab === 'stu') return only(studentsHTML(d));
   if (admin && S.tab === 'pending') return only(pendingHTML(d));
@@ -895,54 +905,101 @@ function progHTML(d) {
     (d.offs.length ? '<table class="tbl" style="margin-top:12px"><tbody>' + d.offs.map(o => '<tr><td><b>' + mdShort(o.date) + '</b></td><td class="small">' + esc(o.className) + (o.school ? ' · ' + esc(o.school) : '') + '</td><td class="small">' + esc(o.reason) + '</td><td style="text-align:right"><button class="btn line sm" data-act="off-del" data-date="' + esc(o.date) + '" data-cls="' + esc(o.cls) + '">삭제</button></td></tr>').join('') + '</tbody></table>' : '<div class="empty small">등록된 휴강일이 없어요.</div>') + '</div>';
   return h;
 }
-/** 학교 고르기: 지역 탭 → 구역별 학교 목록 (+ 이름 찾기). multi=false 면 하나만 (미지정 포함) */
+/** 학교 이름 → 가나다 첫 자음 (앞의 지역 이름은 빼고: 천안가람초 → ㄱ, 대전둔산초 → ㄷ) */
+const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ', CHO1 = { 'ㄲ': 'ㄱ', 'ㄸ': 'ㄷ', 'ㅃ': 'ㅂ', 'ㅆ': 'ㅅ', 'ㅉ': 'ㅈ' };
+function schoolBase(name, region) {
+  let b = String(name).replace(/초등학교.*$/, '').replace(/\(.*\)$/, '');
+  if (region && b.indexOf(region) === 0 && b.length > region.length) b = b.slice(region.length);
+  return b;
+}
+function initialOf(name, region) {
+  const c = schoolBase(name, region).charCodeAt(0) - 0xAC00;
+  if (c < 0 || c > 11171) return '기타';
+  const ch = CHO[Math.floor(c / 588)]; return CHO1[ch] || ch;
+}
+/** 지역 하나의 학교들 (가나다 순, 지역 이름 뺀 이름 기준) */
+function regionSchools(region, skip) {
+  return S.sdata.siteInfo.filter(x => x.region === region && x.name !== skip)
+    .map(x => Object.assign({ base: schoolBase(x.name, region), ini: initialOf(x.name, region) }, x))
+    .sort((a, b) => a.base.localeCompare(b.base, 'ko'));
+}
+/** 구역 순서는 [학교] 탭 순서대로 (천안: 서북구·동남구, 대전: 동구·중구·서구·유성구·대덕구) */
+function areaOrder(region) { return S.sdata.siteInfo.filter(x => x.region === region).map(x => x.area).filter((v, i, a) => v && a.indexOf(v) === i); }
+function areasOf(list) { const have = list.map(x => x.area); return list.length ? areaOrder(list[0].region).filter(a => have.indexOf(a) >= 0) : []; }
+function initsOf(list) { return CHO.split('').map(c => CHO1[c] || c).filter((v, i, a) => a.indexOf(v) === i).filter(c => list.some(x => x.ini === c)); }
+
+/**
+ * 학교 고르기: 지역 탭 → 구역(구) → 가나다 → 이름 찾기. multi=false 면 하나만 (미지정 포함).
+ * 한 번에 한 지역·한 구만 보여서 목록이 짧아요. 고른 학교는 위에 모아서 보여 줌.
+ */
 function schoolPicker(name, chosen, opt) {
   opt = opt || {}; const multi = opt.multi !== false;
-  const info = S.sdata.siteInfo.filter(x => x.name !== opt.skip);
-  const regs = info.map(x => x.region).filter((v, i, a) => a.indexOf(v) === i);
+  const regs = S.sdata.siteInfo.map(x => x.region).filter((v, i, a) => a.indexOf(v) === i);
   const first = (chosen[0] && regionOf(chosen[0])) || (S.region !== 'all' && regs.indexOf(S.region) >= 0 ? S.region : regs[0]);
   const type = multi ? 'checkbox' : 'radio';
-  let h = '<div class="spk" data-name="' + esc(name) + '"><div class="spk-sel">' + spkSummary(chosen) + '</div>' +
-    '<div class="spk-tabs">' + regs.map(r => '<button type="button" class="chip" data-act="spk-reg" data-region="' + esc(r) + '" aria-pressed="' + (r === first) + '">' + esc(r) + ' <small>' + info.filter(x => x.region === r).length + '</small></button>').join('') + '</div>' +
-    '<input class="input spk-q" type="search" placeholder="학교 이름으로 찾기 (예: 불당)" aria-label="학교 이름으로 찾기">' + '<div class="spk-list">';
+  let h = '<div class="spk" data-name="' + esc(name) + '" data-region="' + esc(first) + '" data-area="" data-ini=""><div class="spk-sel">' + spkSummary(chosen) + '</div>' +
+    '<div class="spk-tabs">' + regs.map(r => '<button type="button" class="chip" data-act="spk-reg" data-region="' + esc(r) + '" aria-pressed="' + (r === first) + '">' + esc(r) + ' <small>' + S.sdata.siteInfo.filter(x => x.region === r).length + '</small></button>').join('') + '</div>' +
+    '<div class="spk-sub"></div>' +
+    '<input class="input spk-q" type="search" placeholder="이름으로 찾기 (예: 불당, 둔산)" aria-label="학교 이름으로 찾기">' +
+    '<div class="spk-list">';
   if (!multi) h += '<label class="check spk-none"><input type="radio" name="' + esc(name) + '" value=""' + (!chosen[0] ? ' checked' : '') + '> <span class="muted">(학교 미지정)</span></label>';
-  regs.forEach(r => {
-    h += '<div class="spk-r" data-r="' + esc(r) + '"' + (r === first ? '' : ' hidden') + '>';
-    let lastArea = null;
-    info.filter(x => x.region === r).forEach(x => {
-      if (x.area !== lastArea) { lastArea = x.area; if (x.area) h += '<div class="grp">' + esc(r + ' ' + x.area) + '</div>'; }
-      h += '<label class="check" data-n="' + esc(x.name) + '"><input type="' + type + '" name="' + esc(name) + '" value="' + esc(x.name) + '"' + (chosen.indexOf(x.name) >= 0 ? ' checked' : '') + '> <span>' + esc(x.name) + '</span></label>';
-    });
-    h += '</div>';
+  regs.forEach(r => regionSchools(r, opt.skip).forEach(x => {
+    h += '<label class="check" data-r="' + esc(r) + '" data-a="' + esc(x.area) + '" data-i="' + esc(x.ini) + '" data-n="' + esc(x.name) + '" hidden><input type="' + type + '" name="' + esc(name) + '" value="' + esc(x.name) + '"' + (chosen.indexOf(x.name) >= 0 ? ' checked' : '') + '> <span>' + esc(x.name.replace(/초등학교/, '초')) + '</span></label>';
+  }));
+  return h + '</div><div class="spk-count xs muted"></div></div>';
+}
+function spkSummary(list) { return list.length ? '<span class="xs muted">고른 학교 ' + list.length + '곳:</span> ' + list.slice(0, 12).map(sbadge).join('') + (list.length > 12 ? ' <span class="xs muted">외 ' + (list.length - 12) + '곳</span>' : '') : '<span class="xs muted">아직 고른 학교가 없어요 · 지역 → 구 → 가나다 순서로 좁혀서 고르세요</span>'; }
+/** 학교 고르기 칸의 지금 상태(지역·구·가나다·찾기)대로 보이는 학교만 남김 */
+function spkApply(pk) {
+  const r = pk.dataset.region, q = String((pk.querySelector('.spk-q') || {}).value || '').replace(/\s/g, '');
+  const labels = Array.from(pk.querySelectorAll('.spk-list label[data-n]'));
+  const inReg = labels.filter(l => l.dataset.r === r);
+  const areas = areaOrder(r).filter(a => inReg.some(l => l.dataset.a === a));
+  if (areas.length && !pk.dataset.area) pk.dataset.area = areas[0]; // 구가 있으면 처음엔 첫 구만
+  if (!areas.length) pk.dataset.area = '';
+  const area = pk.dataset.area, ini = pk.dataset.ini;
+  const inArea = inReg.filter(l => !area || area === '*' || l.dataset.a === area);
+  const inis = CHO.split('').map(c => CHO1[c] || c).filter((v, i, a) => a.indexOf(v) === i).filter(c => inArea.some(l => l.dataset.i === c));
+  pk.querySelector('.spk-sub').innerHTML =
+    (areas.length ? '<div class="spk-row">' + ['*'].concat(areas).map(a => '<button type="button" class="chip sm" data-act="spk-area" data-a="' + esc(a) + '" aria-pressed="' + (area === a) + '">' + (a === '*' ? '전체' : esc(a)) + ' <small>' + inReg.filter(l => a === '*' || l.dataset.a === a).length + '</small></button>').join('') + '</div>' : '') +
+    (inis.length > 1 ? '<div class="spk-row ini">' + [''].concat(inis).map(c => '<button type="button" class="chip sm" data-act="spk-ini" data-i="' + c + '" aria-pressed="' + (ini === c) + '">' + (c || '가나다 전체') + '</button>').join('') + '</div>' : '');
+  let shown = 0;
+  labels.forEach(l => {
+    const ok = q ? l.dataset.n.replace(/\s/g, '').indexOf(q) >= 0 : (l.dataset.r === r && (!area || area === '*' || l.dataset.a === area) && (!ini || l.dataset.i === ini));
+    l.hidden = !ok; if (ok) shown++;
   });
-  return h + '</div></div>';
+  pk.querySelector('.spk-count').textContent = q ? '찾은 학교 ' + shown + '곳 (모든 지역)' : r + (area && area !== '*' ? ' ' + area : '') + (ini ? ' · ' + ini : '') + ' 학교 ' + shown + '곳';
 }
-function spkSummary(list) { return list.length ? '<span class="xs muted">선택 ' + list.length + '곳:</span> ' + list.slice(0, 12).map(sbadge).join('') + (list.length > 12 ? ' <span class="xs muted">외 ' + (list.length - 12) + '곳</span>' : '') : '<span class="xs muted">아직 고른 학교가 없어요</span>'; }
-function spkFilter(pk, q) {
-  q = String(q || '').replace(/\s/g, '');
-  const active = (pk.querySelector('[data-act=spk-reg][aria-pressed="true"]') || {}).dataset;
-  pk.querySelectorAll('.spk-r').forEach(el => { el.hidden = q ? false : el.dataset.r !== (active && active.region); });
-  pk.querySelectorAll('.spk-r label').forEach(l => { l.hidden = !!q && l.dataset.n.replace(/\s/g, '').indexOf(q) < 0; });
-  pk.querySelectorAll('.spk-r .grp').forEach(g => { g.hidden = !!q; });
-}
-/* 관리자: 학교 목록 (지역 탭 → 구역별 학교, 학교마다 프로그램·강사·수강생 수) */
+function spkInitAll() { $$('#modal .spk, #app .spk').forEach(spkApply); }
+
+/* 관리자: 학교 탭 — 지역 → 구 → 가나다, 기본은 '프로그램 있는 학교만' */
 function schoolsHTML(d) {
-  const info = d.siteInfo; const regs = d.regions;
+  const regs = d.regions;
   if (!S.schTab || regs.indexOf(S.schTab) < 0) S.schTab = S.region !== 'all' && regs.indexOf(S.region) >= 0 ? S.region : regs[0];
   const progs = S.sdata.programs, tch = S.sdata.teachers, enr = S.sdata.enrollments;
-  const stuCnt = (n) => new Set(enr.filter(e => e.school === n && e.status === '수강').map(e => e.kid + e.phone)).size;
-  let h = '<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b>학교 목록</b><span class="xs muted">전체 ' + info.filter(x => x.region !== '기타').length + '곳 · 학교 추가·이름 수정은 스프레드시트 [학교] 탭</span></div>' +
-    '<div class="tabs" role="tablist" style="margin-top:10px">' + regs.map(r => '<button class="chip" role="tab" data-act="sch-reg" data-region="' + esc(r) + '" aria-pressed="' + (S.schTab === r) + '">' + esc(r) + ' <small>' + info.filter(x => x.region === r).length + '</small></button>').join('') + '</div>';
-  const list = info.filter(x => x.region === S.schTab);
-  const used = list.filter(x => progs.some(p => p.school === x.name)).length;
-  h += '<p class="xs muted" style="margin:6px 0 10px">' + esc(S.schTab) + ' 초등학교 ' + list.length + '곳 · 프로그램이 있는 학교 ' + used + '곳. 학교 이름을 누르면 그 학교 프로그램을 봐요.</p><div class="sch-grid">';
-  let lastArea = null;
-  list.forEach(x => {
-    if (x.area !== lastArea) { lastArea = x.area; if (x.area) h += '</div><div class="grp-h">' + esc(S.schTab + ' ' + x.area) + ' <small>' + list.filter(y => y.area === x.area).length + '곳</small></div><div class="sch-grid">'; }
-    const np = progs.filter(p => p.school === x.name).length, nt = tch.filter(t => schoolsOf(t.school).indexOf(x.name) >= 0 || t.classSchools.indexOf(x.name) >= 0).length, ns = stuCnt(x.name);
-    h += '<button class="sch-item' + (np ? ' has' : '') + '" data-act="sch-go" data-region="' + esc(x.region) + '" data-school="' + esc(x.name) + '"><b>' + esc(x.name) + '</b><span class="xs">' + (np || nt || ns ? '프로그램 ' + np + ' · 강사 ' + nt + ' · 학생 ' + ns : '<span class="muted">아직 없음</span>') + '</span></button>';
-  });
-  return h + '</div></div>';
+  const stat = (n) => ({ p: progs.filter(p => p.school === n).length, t: tch.filter(t => schoolsOf(t.school).indexOf(n) >= 0 || t.classSchools.indexOf(n) >= 0).length, s: new Set(enr.filter(e => e.school === n && e.status === '수강').map(e => e.kid + e.phone)).size });
+  const all = regionSchools(S.schTab).map(x => Object.assign(x, stat(x.name)));
+  const active = all.filter(x => x.p || x.t || x.s);
+  if (S.schOnly == null) S.schOnly = true;
+  const only = S.schOnly && active.length > 0;
+  const areas = areasOf(all);
+  if (S.schArea && S.schArea !== '*' && areas.indexOf(S.schArea) < 0) S.schArea = '';
+  const area = S.schArea || (areas.length && !only ? areas[0] : '*');
+  const q = String(S.schQ || '').replace(/\s/g, '');
+  let list = q ? S.sdata.siteInfo.filter(x => x.name.replace(/\s/g, '').indexOf(q) >= 0).map(x => Object.assign({ base: schoolBase(x.name, x.region), ini: initialOf(x.name, x.region) }, x, stat(x.name)))
+    : (only ? active : all).filter(x => area === '*' || x.area === area);
+  const inis = initsOf(list);
+  if (!q && S.schIni && inis.indexOf(S.schIni) >= 0) list = list.filter(x => x.ini === S.schIni);
+  let h = '<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b>학교 목록</b><span class="xs muted">학교 추가·이름 수정은 스프레드시트 [학교] 탭</span></div>' +
+    '<div class="tabs" role="tablist" style="margin-top:10px">' + regs.map(r => '<button class="chip" role="tab" data-act="sch-reg" data-region="' + esc(r) + '" aria-pressed="' + (S.schTab === r) + '">' + esc(r) + ' <small>' + d.siteInfo.filter(x => x.region === r).length + '</small></button>').join('') + '</div>' +
+    '<div class="sch-tools"><input class="input" id="schQ" type="search" placeholder="모든 지역에서 이름으로 찾기 (예: 불당)" value="' + esc(S.schQ || '') + '">' +
+    '<div class="spk-row"><button class="chip sm" data-act="sch-only" data-v="1" aria-pressed="' + only + '"' + (active.length ? '' : ' disabled') + '>프로그램 있는 학교만 <small>' + active.length + '</small></button><button class="chip sm" data-act="sch-only" data-v="0" aria-pressed="' + !only + '">' + esc(S.schTab) + ' 전체 학교 <small>' + all.length + '</small></button></div>';
+  if (!q && !only && areas.length) h += '<div class="spk-row">' + ['*'].concat(areas).map(a => '<button class="chip sm" data-act="sch-area" data-a="' + esc(a) + '" aria-pressed="' + (area === a) + '">' + (a === '*' ? '구 전체' : esc(a)) + ' <small>' + all.filter(x => a === '*' || x.area === a).length + '</small></button>').join('') + '</div>';
+  if (!q && inis.length > 1 && list.length + 0 > 12 || (!q && S.schIni)) h += '<div class="spk-row ini">' + [''].concat(initsOf((only ? active : all).filter(x => area === '*' || x.area === area))).map(c => '<button class="chip sm" data-act="sch-ini" data-i="' + c + '" aria-pressed="' + ((S.schIni || '') === c) + '">' + (c || '가나다 전체') + '</button>').join('') + '</div>';
+  h += '</div><p class="xs muted" style="margin:8px 0">' + (q ? '찾은 학교 ' + list.length + '곳 (모든 지역)' : esc(S.schTab) + (only ? ' · 프로그램 있는 학교 ' : (area !== '*' ? ' ' + esc(area) : '') + ' · 학교 ') + list.length + '곳') + ' · 이름을 누르면 그 학교 프로그램을 봐요.</p>';
+  if (!list.length) return h + '<div class="empty small">' + (only ? '이 지역엔 아직 프로그램이 있는 학교가 없어요. [' + esc(S.schTab) + ' 전체 학교]를 눌러 보세요.' : '학교가 없어요.') + '</div></div>';
+  h += '<div class="sch-list">' + list.map(x => '<button class="sch-item' + (x.p ? ' has' : '') + '" data-act="sch-go" data-region="' + esc(x.region) + '" data-school="' + esc(x.name) + '"><b>' + esc(x.name.replace(/초등학교/, '초')) + '</b>' + (q && x.region ? '<span class="xs muted">' + esc(x.region + (x.area ? ' ' + x.area : '')) + '</span>' : (!only && area === '*' && x.area ? '<span class="xs muted">' + esc(x.area) + '</span>' : '')) + (x.p || x.t || x.s ? '<span class="xs st">프로그램 ' + x.p + ' · 강사 ' + x.t + ' · 학생 ' + x.s + '</span>' : '') + '</button>').join('') + '</div>';
+  return h + '</div>';
 }
 function teacherNames(v) { return String(v || '').split(/[,，\/]/).map(x => x.trim()).filter(Boolean); }
 function openProg(id) {
@@ -1103,8 +1160,13 @@ document.addEventListener('click', async (ev) => {
     case 'toggle': S.open[t.dataset.id] = !S.open[t.dataset.id]; renderStaff(); break;
     case 'region': { const r = t.dataset.region; if (r === '_none') { S.school = '_none'; S.region = 'all'; } else { S.region = r; S.school = 'all'; } store.set('nb.region', S.region); store.set('nb.school', S.school); S.reg.ids.clear(); renderStaff(); break; }
     case 'sch-go': S.region = t.dataset.region; S.school = t.dataset.school; S.tab = t.dataset.tab || 'prog'; store.set('nb.region', S.region); store.set('nb.school', S.school); renderStaff(); window.scrollTo(0, 0); break;
-    case 'sch-reg': S.schTab = t.dataset.region; renderStaff(); break;
-    case 'spk-reg': { const pk = t.closest('.spk'); pk.querySelectorAll('[data-act=spk-reg]').forEach(b => b.setAttribute('aria-pressed', b === t)); pk.querySelectorAll('.spk-r').forEach(el => { el.hidden = el.dataset.r !== t.dataset.region; }); const q = pk.querySelector('.spk-q'); if (q) { q.value = ''; spkFilter(pk, ''); } break; }
+    case 'sch-reg': S.schTab = t.dataset.region; S.schArea = ''; S.schIni = ''; S.schQ = ''; renderStaff(); break;
+    case 'sch-only': S.schOnly = t.dataset.v === '1'; S.schArea = ''; S.schIni = ''; renderStaff(); break;
+    case 'sch-area': S.schArea = t.dataset.a; S.schIni = ''; renderStaff(); break;
+    case 'sch-ini': S.schIni = t.dataset.i; renderStaff(); break;
+    case 'spk-area': { const pk = t.closest('.spk'); pk.dataset.area = t.dataset.a; pk.dataset.ini = ''; spkApply(pk); break; }
+    case 'spk-ini': { const pk = t.closest('.spk'); pk.dataset.ini = t.dataset.i; spkApply(pk); break; }
+    case 'spk-reg': { const pk = t.closest('.spk'); pk.querySelectorAll('[data-act=spk-reg]').forEach(b => b.setAttribute('aria-pressed', b === t)); pk.dataset.region = t.dataset.region; pk.dataset.area = ''; pk.dataset.ini = ''; const q = pk.querySelector('.spk-q'); if (q) q.value = ''; spkApply(pk); break; }
     case 'school': S.school = t.dataset.school; store.set('nb.school', S.school); S.reg.ids.clear(); $('#toast').classList.add('hidden'); renderStaff(); break;
     case 'type': S.type = t.dataset.type; store.set('nb.type', S.type); S.reg.ids.clear(); $('#toast').classList.add('hidden'); renderStaff(); break;
     case 'tab': S.tab = t.dataset.tab; $('#toast').classList.add('hidden'); renderStaff(); window.scrollTo(0, 0); break;
@@ -1127,7 +1189,7 @@ document.addEventListener('change', (ev) => {
   if (t.name === 'grade' && $('#regForm')) { S.reg.grade = t.value; renderClsList(); }
   if (t.dataset.cls) { t.checked ? S.reg.ids.add(t.dataset.cls) : S.reg.ids.delete(t.dataset.cls); t.closest('.cls-opt').classList.toggle('on', t.checked); }
 });
-document.addEventListener('input', (ev) => { if (ev.target.classList && ev.target.classList.contains('spk-q')) { spkFilter(ev.target.closest('.spk'), ev.target.value); return; } if (ev.target.id === 'enrQ') { S.q = ev.target.value; renderEnrList(); return; } if (ev.target.hasAttribute('data-phone')) { const el = ev.target; const v = fmtPhone(el.value); if (v !== el.value) el.value = v; } });
+document.addEventListener('input', (ev) => { if (ev.target.classList && ev.target.classList.contains('spk-q')) { spkApply(ev.target.closest('.spk')); return; } if (ev.target.id === 'schQ') { S.schQ = ev.target.value; renderStaff(); const q = $('#schQ'); if (q) { q.focus(); q.setSelectionRange(q.value.length, q.value.length); } return; } if (ev.target.id === 'enrQ') { S.q = ev.target.value; renderEnrList(); return; } if (ev.target.hasAttribute('data-phone')) { const el = ev.target; const v = fmtPhone(el.value); if (v !== el.value) el.value = v; } });
 document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && $('#modal .scrim')) modal(''); });
 document.addEventListener('submit', async (ev) => {
   ev.preventDefault();
