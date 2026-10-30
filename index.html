@@ -200,6 +200,14 @@ textarea.input{min-height:76px;resize:vertical;font-size:16px}
 .sch-tools .input{min-height:42px;font-size:15px;margin-bottom:8px}
 .sch-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
 .sch-item .st{color:#7A5A00;font-weight:600}
+.sch-item{flex-direction:row!important;align-items:stretch!important;padding:0!important;overflow:hidden}
+.sch-name{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;background:none;border:0;padding:7px 10px;min-width:0}
+.sch-ed{flex:none;width:34px;border:0;border-left:1px solid var(--line);background:var(--surface-2);color:var(--fg-muted);font-size:15px}
+.sch-ed:hover{background:var(--accent-soft);color:var(--accent)}
+.sch-item.hid{opacity:.55}
+.type-ed{display:flex;flex-wrap:wrap;gap:6px}
+.type-chip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:5px 6px 5px 12px;font-weight:600}
+.type-chip button{border:0;background:var(--surface-2);border-radius:50%;width:24px;height:24px;line-height:1;color:var(--fg-muted)}
 .spk-r{display:contents}
 .spk-r[hidden],.spk-r label[hidden],.spk-r .grp[hidden]{display:none}
 .spk-list .grp{grid-column:1 / -1;font-weight:700;font-size:13px;color:#7A5A00;margin-top:6px}
@@ -783,7 +791,7 @@ function renderStaff() {
   const admin = d.role === 'admin';
   let h = header((admin ? '관리자' : esc(d.teacher) + ' 선생님') + (d.school ? ' · ' + d.school : ''), '<button class="btn sm line" data-act="s-refresh">새로고침</button><button class="btn sm line" data-act="s-logout">나가기</button>');
   // 강사: 출석부 · 수강생 명단(보기 전용) / 관리자: + 수강 등록 · 프로그램 · 강사 관리 · 설정
-  const tabs = admin ? [['roster', '출석부'], ['reg', '수강 등록'], ['list', '수강생 명단 ' + new Set(d.enrollments.filter(e => e.status === '수강').map(e => e.kid + e.phone)).size + '명'], ['prog', '프로그램'], ['tch', '강사 관리'], ['sch', '학교'], ['set', '설정']].concat(d.pending.length ? [['pending', '승인 대기 ' + d.pending.length]] : [])
+  const tabs = admin ? [['roster', '출석부'], ['reg', '수강 등록'], ['list', '수강생 명단 ' + new Set(d.enrollments.filter(e => e.status === '수강').map(e => e.kid + e.phone)).size + '명'], ['prog', '프로그램'], ['tch', '강사 관리'], ['sch', '학교·기관'], ['set', '설정']].concat(d.pending.length ? [['pending', '승인 대기 ' + d.pending.length]] : [])
     : [['roster', '출석부'], ['stu', '수강생 명단']];
   if (!tabs.some(t => t[0] === S.tab)) S.tab = 'roster';
   h += '<div class="tabs" role="tablist">' + tabs.map(t => '<button class="chip" role="tab" data-act="tab" data-tab="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + '</button>').join('') + '</div>';
@@ -944,7 +952,7 @@ function schoolPicker(name, chosen, opt) {
     '<div class="spk-list">';
   if (!multi) h += '<label class="check spk-none"><input type="radio" name="' + esc(name) + '" value=""' + (!chosen[0] ? ' checked' : '') + '> <span class="muted">(학교 미지정)</span></label>';
   regs.forEach(r => regionSchools(r, opt.skip).forEach(x => {
-    h += '<label class="check" data-r="' + esc(r) + '" data-a="' + esc(x.area) + '" data-i="' + esc(x.ini) + '" data-n="' + esc(x.name) + '" hidden><input type="' + type + '" name="' + esc(name) + '" value="' + esc(x.name) + '"' + (chosen.indexOf(x.name) >= 0 ? ' checked' : '') + '> <span>' + esc(x.name.replace(/초등학교/, '초')) + '</span></label>';
+    h += '<label class="check" data-r="' + esc(r) + '" data-a="' + esc(x.area) + '" data-i="' + esc(x.ini) + '" data-n="' + esc(x.name) + '" hidden><input type="' + type + '" name="' + esc(name) + '" value="' + esc(x.name) + '"' + (chosen.indexOf(x.name) >= 0 ? ' checked' : '') + '> <span>' + esc(x.name.replace(/초등학교/, '초')) + (x.kind && x.kind !== '초등학교' ? ' <span class="tbadge">' + esc(x.kind) + '</span>' : '') + '</span></label>';
   }));
   return h + '</div><div class="spk-count xs muted"></div></div>';
 }
@@ -972,34 +980,73 @@ function spkApply(pk) {
 }
 function spkInitAll() { $$('#modal .spk, #app .spk').forEach(spkApply); }
 
-/* 관리자: 학교 탭 — 지역 → 구 → 가나다, 기본은 '프로그램 있는 학교만' */
+/** 관리용 학교·기관 목록: [학교] 탭 전체(숨긴 곳 포함) + 프로그램에만 적힌 곳 */
+function mgmtSites() {
+  const all = (S.sdata.siteAll || []).map(x => Object.assign({}, x));
+  S.sdata.siteInfo.forEach(x => { if (!all.some(y => y.name === x.name)) all.push(Object.assign({ use: true, memo: '[학교] 탭에 없음 — 저장하면 추가돼요', extra: true }, x)); });
+  return all;
+}
+/* 관리자: 학교·기관 탭 — 지역 → 구 → 가나다, 유형(초등학교·거점센터·마을학교) 필터, 추가·수정·숨기기·삭제 */
 function schoolsHTML(d) {
-  const regs = d.regions;
+  const sites = mgmtSites();
+  const kinds = d.types.filter(t => sites.some(x => x.kind === t)).concat(sites.some(x => d.types.indexOf(x.kind) < 0) ? [''] : []);
+  if (S.schKind && d.types.indexOf(S.schKind) < 0) S.schKind = '';
+  const src = sites.filter(x => (S.schHidden || x.use) && (!S.schKind || x.kind === S.schKind));
+  const regs = src.map(x => x.region).filter((v, i, a) => a.indexOf(v) === i);
   if (!S.schTab || regs.indexOf(S.schTab) < 0) S.schTab = S.region !== 'all' && regs.indexOf(S.region) >= 0 ? S.region : regs[0];
   const progs = S.sdata.programs, tch = S.sdata.teachers, enr = S.sdata.enrollments;
   const stat = (n) => ({ p: progs.filter(p => p.school === n).length, t: tch.filter(t => schoolsOf(t.school).indexOf(n) >= 0 || t.classSchools.indexOf(n) >= 0).length, s: new Set(enr.filter(e => e.school === n && e.status === '수강').map(e => e.kid + e.phone)).size });
-  const all = regionSchools(S.schTab).map(x => Object.assign(x, stat(x.name)));
+  const deco = (x) => Object.assign({ base: schoolBase(x.name, x.region), ini: initialOf(x.name, x.region) }, x, stat(x.name));
+  const all = src.filter(x => x.region === S.schTab).map(deco).sort((a, b) => a.base.localeCompare(b.base, 'ko'));
   const active = all.filter(x => x.p || x.t || x.s);
   if (S.schOnly == null) S.schOnly = true;
   const only = S.schOnly && active.length > 0;
-  const areas = areasOf(all);
-  if (S.schArea && S.schArea !== '*' && areas.indexOf(S.schArea) < 0) S.schArea = '';
-  const area = S.schArea || (areas.length && !only ? areas[0] : '*');
+  const areas = all.map(x => x.area).filter((v, i, a) => v && a.indexOf(v) === i);
+  const areaOrd = sites.filter(x => x.region === S.schTab).map(x => x.area).filter((v, i, a) => v && a.indexOf(v) === i).filter(a => areas.indexOf(a) >= 0);
+  if (S.schArea && S.schArea !== '*' && areaOrd.indexOf(S.schArea) < 0) S.schArea = '';
+  const area = S.schArea || (areaOrd.length && !only ? areaOrd[0] : '*');
   const q = String(S.schQ || '').replace(/\s/g, '');
-  let list = q ? S.sdata.siteInfo.filter(x => x.name.replace(/\s/g, '').indexOf(q) >= 0).map(x => Object.assign({ base: schoolBase(x.name, x.region), ini: initialOf(x.name, x.region) }, x, stat(x.name)))
-    : (only ? active : all).filter(x => area === '*' || x.area === area);
-  const inis = initsOf(list);
+  let list = q ? src.filter(x => x.name.replace(/\s/g, '').indexOf(q) >= 0).map(deco) : (only ? active : all).filter(x => area === '*' || x.area === area);
+  const base = list.slice();
+  const inis = initsOf(base);
   if (!q && S.schIni && inis.indexOf(S.schIni) >= 0) list = list.filter(x => x.ini === S.schIni);
-  let h = '<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b>학교 목록</b><span class="xs muted">학교 추가·이름 수정은 스프레드시트 [학교] 탭</span></div>' +
-    '<div class="tabs" role="tablist" style="margin-top:10px">' + regs.map(r => '<button class="chip" role="tab" data-act="sch-reg" data-region="' + esc(r) + '" aria-pressed="' + (S.schTab === r) + '">' + esc(r) + ' <small>' + d.siteInfo.filter(x => x.region === r).length + '</small></button>').join('') + '</div>' +
+  const hiddenN = sites.filter(x => !x.use).length;
+  let h = '<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><b>학교·기관 목록</b><button class="btn primary sm" data-act="site-edit" data-n="">＋ 학교·기관 추가</button></div>' +
+    '<p class="xs muted" style="margin-top:4px">학교, 거점센터, 마을학교를 여기서 추가하고 ✎ 로 이름·지역·유형을 고치거나 숨기고 지울 수 있어요. 이름을 바꾸면 그 이름이 적힌 프로그램·강사도 같이 바뀌어요.</p>' +
+    '<div class="spk-row" style="margin-top:10px"><b class="xs muted" style="align-self:center;margin-right:2px">유형</b>' + [['', '전체', sites.filter(x => S.schHidden || x.use).length]].concat(kinds.filter(Boolean).map(k => [k, k, sites.filter(x => x.kind === k && (S.schHidden || x.use)).length]))
+      .map(k => '<button class="chip sm" data-act="sch-kind" data-k="' + esc(k[0]) + '" aria-pressed="' + ((S.schKind || '') === k[0]) + '">' + esc(k[1]) + ' <small>' + k[2] + '</small></button>').join('') +
+      (hiddenN ? '<button class="chip sm" data-act="sch-hidden" aria-pressed="' + !!S.schHidden + '">숨긴 곳도 보기 <small>' + hiddenN + '</small></button>' : '') + '</div>' +
+    '<div class="tabs" role="tablist" style="margin-top:6px">' + regs.map(r => '<button class="chip" role="tab" data-act="sch-reg" data-region="' + esc(r) + '" aria-pressed="' + (S.schTab === r) + '">' + esc(r) + ' <small>' + src.filter(x => x.region === r).length + '</small></button>').join('') + '</div>' +
     '<div class="sch-tools"><input class="input" id="schQ" type="search" placeholder="모든 지역에서 이름으로 찾기 (예: 불당)" value="' + esc(S.schQ || '') + '">' +
-    '<div class="spk-row"><button class="chip sm" data-act="sch-only" data-v="1" aria-pressed="' + only + '"' + (active.length ? '' : ' disabled') + '>프로그램 있는 학교만 <small>' + active.length + '</small></button><button class="chip sm" data-act="sch-only" data-v="0" aria-pressed="' + !only + '">' + esc(S.schTab) + ' 전체 학교 <small>' + all.length + '</small></button></div>';
-  if (!q && !only && areas.length) h += '<div class="spk-row">' + ['*'].concat(areas).map(a => '<button class="chip sm" data-act="sch-area" data-a="' + esc(a) + '" aria-pressed="' + (area === a) + '">' + (a === '*' ? '구 전체' : esc(a)) + ' <small>' + all.filter(x => a === '*' || x.area === a).length + '</small></button>').join('') + '</div>';
-  if (!q && inis.length > 1 && list.length + 0 > 12 || (!q && S.schIni)) h += '<div class="spk-row ini">' + [''].concat(initsOf((only ? active : all).filter(x => area === '*' || x.area === area))).map(c => '<button class="chip sm" data-act="sch-ini" data-i="' + c + '" aria-pressed="' + ((S.schIni || '') === c) + '">' + (c || '가나다 전체') + '</button>').join('') + '</div>';
-  h += '</div><p class="xs muted" style="margin:8px 0">' + (q ? '찾은 학교 ' + list.length + '곳 (모든 지역)' : esc(S.schTab) + (only ? ' · 프로그램 있는 학교 ' : (area !== '*' ? ' ' + esc(area) : '') + ' · 학교 ') + list.length + '곳') + ' · 이름을 누르면 그 학교 프로그램을 봐요.</p>';
-  if (!list.length) return h + '<div class="empty small">' + (only ? '이 지역엔 아직 프로그램이 있는 학교가 없어요. [' + esc(S.schTab) + ' 전체 학교]를 눌러 보세요.' : '학교가 없어요.') + '</div></div>';
-  h += '<div class="sch-list">' + list.map(x => '<button class="sch-item' + (x.p ? ' has' : '') + '" data-act="sch-go" data-region="' + esc(x.region) + '" data-school="' + esc(x.name) + '"><b>' + esc(x.name.replace(/초등학교/, '초')) + '</b>' + (q && x.region ? '<span class="xs muted">' + esc(x.region + (x.area ? ' ' + x.area : '')) + '</span>' : (!only && area === '*' && x.area ? '<span class="xs muted">' + esc(x.area) + '</span>' : '')) + (x.p || x.t || x.s ? '<span class="xs st">프로그램 ' + x.p + ' · 강사 ' + x.t + ' · 학생 ' + x.s + '</span>' : '') + '</button>').join('') + '</div>';
+    '<div class="spk-row"><button class="chip sm" data-act="sch-only" data-v="1" aria-pressed="' + only + '"' + (active.length ? '' : ' disabled') + '>프로그램 있는 곳만 <small>' + active.length + '</small></button><button class="chip sm" data-act="sch-only" data-v="0" aria-pressed="' + !only + '">' + esc(S.schTab || '') + ' 전체 <small>' + all.length + '</small></button></div>';
+  if (!q && !only && areaOrd.length) h += '<div class="spk-row">' + ['*'].concat(areaOrd).map(a => '<button class="chip sm" data-act="sch-area" data-a="' + esc(a) + '" aria-pressed="' + (area === a) + '">' + (a === '*' ? '구 전체' : esc(a)) + ' <small>' + all.filter(x => a === '*' || x.area === a).length + '</small></button>').join('') + '</div>';
+  if (!q && inis.length > 1 && base.length > 12) h += '<div class="spk-row ini">' + [''].concat(inis).map(c => '<button class="chip sm" data-act="sch-ini" data-i="' + c + '" aria-pressed="' + ((S.schIni || '') === c) + '">' + (c || '가나다 전체') + '</button>').join('') + '</div>';
+  h += '</div><p class="xs muted" style="margin:8px 0">' + (q ? '찾은 곳 ' + list.length + '곳 (모든 지역)' : esc(S.schTab || '') + (only ? ' · 프로그램 있는 곳 ' : (area !== '*' ? ' ' + esc(area) : '') + ' · ') + list.length + '곳') + ' · 이름을 누르면 그곳 프로그램을 봐요.</p>';
+  if (!regs.length) return h + '<div class="empty small">학교·기관이 없어요. [＋ 학교·기관 추가]로 넣어 주세요.</div></div>';
+  if (!list.length) return h + '<div class="empty small">' + (only ? '이 지역엔 아직 프로그램이 있는 곳이 없어요. [' + esc(S.schTab) + ' 전체]를 눌러 보세요.' : '없어요.') + '</div></div>';
+  h += '<div class="sch-list">' + list.map(x => '<div class="sch-item' + (x.p ? ' has' : '') + (x.use ? '' : ' hid') + '"><button class="sch-name" data-act="sch-go" data-region="' + esc(x.region) + '" data-school="' + esc(x.name) + '"><b>' + esc(x.name.replace(/초등학교/, '초')) + '</b>' +
+    ((x.kind && x.kind !== '초등학교') || !x.use ? '<span class="xs">' + (x.kind && x.kind !== '초등학교' ? '<span class="tbadge">' + esc(x.kind) + '</span>' : '') + (x.use ? '' : '<span class="badge neutral">숨김</span>') + '</span>' : '') +
+    (q && x.region ? '<span class="xs muted">' + esc(x.region + (x.area ? ' ' + x.area : '')) + '</span>' : (!only && area === '*' && x.area ? '<span class="xs muted">' + esc(x.area) + '</span>' : '')) +
+    (x.p || x.t || x.s ? '<span class="xs st">프로그램 ' + x.p + ' · 강사 ' + x.t + ' · 학생 ' + x.s + '</span>' : '') + '</button><button class="sch-ed" data-act="site-edit" data-n="' + esc(x.name) + '" aria-label="' + esc(x.name) + ' 수정">✎</button></div>').join('') + '</div>';
   return h + '</div>';
+}
+/** 학교·기관 추가/수정 창 */
+function openSite(name) {
+  const sites = mgmtSites();
+  const x = name ? sites.find(y => y.name === name) : null;
+  const regs = sites.map(y => y.region).filter((v, i, a) => v && a.indexOf(v) === i);
+  const v = x || { name: '', region: S.schTab || (S.region !== 'all' ? S.region : regs[0] || ''), area: '', kind: S.schKind || '초등학교', use: true, memo: '' };
+  const areas = sites.filter(y => y.region === v.region).map(y => y.area).filter((a, i, arr) => a && arr.indexOf(a) === i);
+  const st = x ? { p: S.sdata.programs.filter(p => p.school === x.name).length } : { p: 0 };
+  modal('<h2>' + (x ? '학교·기관 수정' : '학교·기관 추가') + '</h2><form id="siteForm" data-old="' + esc(x && !x.extra ? x.name : '') + '" class="form-grid">' +
+    '<label class="field"><span>유형</span><select class="input" name="kind">' + S.sdata.types.map(t => '<option' + (t === v.kind ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + '</select></label>' +
+    '<label class="field wide"><span>이름 <em>(예: 천안불당초등학교, 천안 서북 거점센터, 아산 ○○ 마을학교)</em></span><input class="input" name="name" required maxlength="40" value="' + esc(v.name) + '"></label>' +
+    '<label class="field"><span>지역 <em>(새 지역은 그냥 적으면 돼요)</em></span><input class="input" name="region" required maxlength="20" list="regList" value="' + esc(v.region) + '"><datalist id="regList">' + regs.map(r => '<option value="' + esc(r) + '">').join('') + '</datalist></label>' +
+    '<label class="field"><span>구역 <em>(선택 · 예: 서북구)</em></span><input class="input" name="area" maxlength="20" list="areaList" value="' + esc(v.area) + '"><datalist id="areaList">' + areas.map(a => '<option value="' + esc(a) + '">').join('') + '</datalist></label>' +
+    '<label class="field wide"><span>메모 <em>(선택)</em></span><input class="input" name="memo" maxlength="100" value="' + esc(x && x.extra ? '' : v.memo) + '"></label>' +
+    '<label class="check wide"><input type="checkbox" name="use"' + (v.use ? ' checked' : '') + '> 사용 (끄면 학교 고르기 목록에서 숨겨요 · 이미 있는 프로그램은 그대로)</label>' +
+    (x && !x.extra ? '<div class="wide note small">' + (st.p ? '이곳에 프로그램이 ' + st.p + '개 있어요. 이름을 바꾸면 프로그램·강사에 적힌 이름도 같이 바뀌어요. 지우려면 프로그램을 먼저 다른 곳으로 옮겨야 해요 (대신 \'사용\'을 끄면 숨길 수 있어요).' : '프로그램이 없는 곳이라 지울 수 있어요.') + '</div>' : '') +
+    '<div class="sheet-act wide">' + (x && !x.extra ? '<button class="btn line" type="button" data-act="site-del" data-n="' + esc(x.name) + '"' + (st.p ? ' disabled' : '') + ' style="color:var(--abs)">삭제</button>' : '') + '<button class="btn line" type="button" data-act="close">닫기</button><button class="btn primary" type="submit">저장</button></div></form>');
 }
 function teacherNames(v) { return String(v || '').split(/[,，\/]/).map(x => x.trim()).filter(Boolean); }
 function openProg(id) {
@@ -1084,7 +1131,11 @@ function pinModal(title, r) { modal('<h2>' + esc(title) + '</h2><p><b>' + esc(r.
 /* 관리자: 설정 (결석 신고 마감) */
 function setHTML(d) {
   const help = { '시작 30분 전': '수업 시작 30분 전까지', '시작 10분 전': '수업 시작 10분 전까지', '시작 시각': '수업 시작 전까지 (기본)', '시작 후 10분': '수업 시작하고 10분 뒤까지 — 지각·결석 연락을 늦게 받을 때', '종료 시각': '수업이 끝날 때까지', '종료 후 10분': '수업이 끝나고 10분 뒤까지' };
-  return '<div class="note" style="margin-top:14px">설정은 모든 운영 유형(' + d.types.map(esc).join(' · ') + ')에 똑같이 적용돼요. 운영 유형 이름은 스프레드시트 [설정] 탭 \'운영 유형\' 칸에서 바꿀 수 있어요.</div><div class="card" style="margin-top:14px"><b>학부모 결석 신고 마감</b><p class="xs muted" style="margin:4px 0 12px">학부모가 언제까지 결석 신고(·취소)를 할 수 있는지 정해요. 강사가 이미 <b>출석</b>으로 체크한 수업은 마감 전이라도 신고할 수 없어요.</p>' +
+  return '<div class="card" style="margin-top:14px"><b>운영 유형</b><p class="xs muted" style="margin:4px 0 10px">프로그램·강사·학교·기관을 나누는 유형이에요 (예: 초등학교, 거점센터, 마을학교). 더하거나 뺄 수 있어요. 프로그램·강사·학교에 쓰고 있는 유형은 뺄 수 없어요.</p>' +
+    '<form id="typesForm"><div class="type-ed">' + d.types.map(t => '<span class="type-chip"><input type="hidden" name="t" value="' + esc(t) + '">' + esc(t) + ' <button type="button" data-act="type-del" aria-label="' + esc(t) + ' 빼기">×</button></span>').join('') + '</div>' +
+    '<div class="row2" style="margin-top:10px;grid-template-columns:1fr auto"><input class="input" id="typeNew" maxlength="20" placeholder="새 유형 (예: 도서관)"><button class="btn line" type="button" data-act="type-add">더하기</button></div>' +
+    '<button class="btn primary" type="submit" style="margin-top:10px">운영 유형 저장</button></form></div>' +
+    '<div class="card" style="margin-top:14px"><b>학부모 결석 신고 마감</b><p class="xs muted" style="margin:4px 0 12px">학부모가 언제까지 결석 신고(·취소)를 할 수 있는지 정해요. 강사가 이미 <b>출석</b>으로 체크한 수업은 마감 전이라도 신고할 수 없어요.</p>' +
     '<form id="setForm" class="stack">' + d.deadlineOptions.map(o => '<label class="check"><input type="radio" name="dl" value="' + esc(o) + '"' + (o === d.deadline ? ' checked' : '') + '> <span><b>' + esc(o) + '</b> <span class="muted small">· ' + esc(help[o] || '') + '</span></span></label>').join('') +
     '<button class="btn primary" type="submit" style="margin-top:6px">저장</button></form></div>';
 }
@@ -1161,6 +1212,13 @@ document.addEventListener('click', async (ev) => {
     case 'region': { const r = t.dataset.region; if (r === '_none') { S.school = '_none'; S.region = 'all'; } else { S.region = r; S.school = 'all'; } store.set('nb.region', S.region); store.set('nb.school', S.school); S.reg.ids.clear(); renderStaff(); break; }
     case 'sch-go': S.region = t.dataset.region; S.school = t.dataset.school; S.tab = t.dataset.tab || 'prog'; store.set('nb.region', S.region); store.set('nb.school', S.school); renderStaff(); window.scrollTo(0, 0); break;
     case 'sch-reg': S.schTab = t.dataset.region; S.schArea = ''; S.schIni = ''; S.schQ = ''; renderStaff(); break;
+    case 'sch-kind': S.schKind = t.dataset.k; S.schArea = ''; S.schIni = ''; renderStaff(); break;
+    case 'sch-hidden': S.schHidden = !S.schHidden; renderStaff(); break;
+    case 'site-edit': openSite(t.dataset.n); break;
+    case 'site-del': modal('<h2>삭제할까요?</h2><p><b>' + esc(t.dataset.n) + '</b> 을(를) 학교·기관 목록에서 지워요. 강사의 학교 목록에서도 빠져요. 되돌릴 수 없어요.</p><div class="sheet-act"><button class="btn line" data-act="close" autofocus>취소</button><button class="btn abs" data-act="site-del-ok" data-n="' + esc(t.dataset.n) + '">삭제</button></div>'); break;
+    case 'site-del-ok': busy(t, true); try { await rpc('deleteSite', S.pin, t.dataset.n); modal(''); toast('지웠어요.'); await loadStaff(null, true); } catch (e) { busy(t, false); toast(e.message, true); } break;
+    case 'type-del': t.closest('.type-chip').remove(); break;
+    case 'type-add': { const inp = $('#typeNew'); const v = inp.value.trim(); if (!v) break; if ($$('#typesForm [name=t]').some(i => i.value === v)) { toast('이미 있는 유형이에요.', true); break; } const sp = document.createElement('span'); sp.className = 'type-chip'; sp.innerHTML = '<input type="hidden" name="t" value="' + esc(v) + '">' + esc(v) + ' <button type="button" data-act="type-del" aria-label="빼기">×</button>'; $('#typesForm .type-ed').appendChild(sp); inp.value = ''; inp.focus(); break; }
     case 'sch-only': S.schOnly = t.dataset.v === '1'; S.schArea = ''; S.schIni = ''; renderStaff(); break;
     case 'sch-area': S.schArea = t.dataset.a; S.schIni = ''; renderStaff(); break;
     case 'sch-ini': S.schIni = t.dataset.i; renderStaff(); break;
@@ -1202,6 +1260,8 @@ document.addEventListener('submit', async (ev) => {
   if (f.id === 'regForm') submitReg(f);
   if (f.id === 'progForm') saveProg(f);
   if (f.id === 'stuForm') saveStudent(f);
+  if (f.id === 'siteForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { const r = await rpc('saveSite', S.pin, { oldName: f.dataset.old || undefined, name: fd.get('name'), region: fd.get('region'), area: fd.get('area'), kind: fd.get('kind'), memo: fd.get('memo'), use: !!fd.get('use') }); modal(''); toast('저장했어요.' + (r.moved ? ' 프로그램 ' + r.moved + '개의 학교 이름도 바꿨어요.' : '')); S.schTab = fd.get('region').trim(); S.schQ = ''; await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
+  if (f.id === 'typesForm') { const list = new FormData(f).getAll('t'); const nv = ($('#typeNew') || {}).value; if (nv && nv.trim()) list.push(nv.trim()); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { const r = await rpc('setTypes', S.pin, list); toast('운영 유형: ' + r.types.join(' · ')); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
   if (f.id === 'bulkForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); if (!fd.getAll('ids').length || !fd.getAll('school').length) { toast('프로그램과 학교를 골라 주세요.', true); return; } busy(btn, true); try { const r = await rpc('copyClass', S.pin, fd.getAll('ids'), fd.getAll('school')); modal(''); toast('학교별로 만들었어요 (새로 ' + r.created + '개). 이제 학교마다 강사를 지정해 주세요.'); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
   if (f.id === 'offForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { await rpc('saveOff', S.pin, fd.get('date'), fd.get('cls'), fd.get('reason'), true); toast('휴강일을 추가했어요.'); await loadStaff(null, true); } catch (e) { busy(btn, false); toast(e.message, true); } }
   if (f.id === 'tchForm') { const fd = new FormData(f); const btn = f.querySelector('[type=submit]'); busy(btn, true); try { const r = await rpc('saveTeacher', S.pin, { name: fd.get('name'), phone: fd.get('phone'), type: fd.get('type'), schools: fd.getAll('schools') }); await loadStaff(null, true); pinModal('강사 등록 완료', r); } catch (e) { busy(btn, false); toast(e.message, true); } }
